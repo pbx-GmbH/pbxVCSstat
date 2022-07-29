@@ -39,5 +39,3 @@ print('Energy balance:')
 print('Qdot_refside = {}'.format(Qdot_refside))
 print('Qdot_coolantside = {}'.format(Qdot_coolantside))
 print('Difference = {}'.format(Qdot_refside+Qdot_coolantside))
-
-
