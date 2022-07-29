@@ -151,8 +151,6 @@ class System:
         plt.subplot(222)
 
 
-
-
 class Component:
     def __init__(self, id: str, system: object):
         self.system = system
@@ -185,6 +183,7 @@ class Component:
 
     def get_ph_data(self, npoints: int):
         pass
+
 
 class Junction:
     def __init__(self, id: str, system: object, medium: str, upstream_component:object, upstream_id: str, downstream_component: object, downstream_id: str, mdot_init: float, p_init: float, h_init: float):
@@ -252,6 +251,7 @@ class Junction:
             mdot=self.get_massflow() * 1e3)
         return text
 
+
 class Compressor_efficiency(Component):
     def __init__(self, id: str, system: object, etaS: float, etaV:float, stroke: float, speed: float, etaEL:float = 1.):
         super().__init__(id, system)
@@ -315,6 +315,7 @@ class Compressor_efficiency(Component):
         p = np.linspace(pin, pout, npoints)
         h = np.linspace(hin, hout, npoints)
         return [p, h]
+
 
 class Condenser(Component):
     def __init__(self, id: str, system: object, k: iter, area: float, subcooling: float, T_air_in: float, mdot_air_in: float):
