@@ -151,8 +151,6 @@ class System:
         plt.subplot(222)
 
 
-
-
 class Component:
     def __init__(self, id: str, system: object):
         self.system = system
@@ -185,6 +183,7 @@ class Component:
 
     def get_ph_data(self, npoints: int):
         pass
+
 
 class Junction:
     def __init__(self, id: str, system: object, medium: str, upstream_component:object, upstream_id: str, downstream_component: object, downstream_id: str, mdot_init: float, p_init: float, h_init: float):
@@ -252,6 +251,7 @@ class Junction:
             mdot=self.get_massflow() * 1e3)
         return text
 
+
 class Compressor_efficiency(Component):
     def __init__(self, id: str, system: object, etaS: float, etaV:float, stroke: float, speed: float, etaEL:float = 1.):
         super().__init__(id, system)
@@ -315,6 +315,7 @@ class Compressor_efficiency(Component):
         p = np.linspace(pin, pout, npoints)
         h = np.linspace(hin, hout, npoints)
         return [p, h]
+
 
 class Condenser(Component):
     def __init__(self, id: str, system: object, k: iter, area: float, subcooling: float, T_air_in: float, mdot_air_in: float):
@@ -538,7 +539,7 @@ class CondenserBPHE(Component):
         LMTD = np.zeros(3)
         LMTD[0] = lmtd_calc(Tref_in, TC, TSL_out, TSL_1)
         LMTD[1] = lmtd_calc(TC, TC, TSL_1, TSL_2)
-        LMTD[2] = lmtd_calc(TC, TC - self.dTSC, TSL_2, Tref_in)
+        LMTD[2] = lmtd_calc(TC, TC - self.dTSC, TSL_2, TSL_in)
 
         # Formulation of the equation system as according to fsolve documentation ( 0 = ... ).
         # The equation set  and model definition is documented in the model description.
@@ -583,18 +584,18 @@ class CondenserBPHE(Component):
         self.areafraction_condenser = x[5]
         self.areafraction_subcool = x[6]
 
-        self.p = CPPSI('P', 'T', self.TC, 'Q', 0, self.medium)
+        self.p = CPPSI('P', 'T', self.TC, 'Q', 0, self.junctions['inlet_A'].medium)
 
         if self.dTSC == 0:
-            hout = CPPSI('H', 'P', self.p, 'Q', 0, self.medium)
+            hout = CPPSI('H', 'P', self.p, 'Q', 0, self.junctions['inlet_A'].medium)
         else:
-            hout = CPPSI('H', 'P', self.p, 'T', self.TC-self.dTSC, self.medium)
+            hout = CPPSI('H', 'P', self.p, 'T', self.TC-self.dTSC, self.junctions['inlet_A'].medium)
         mdot = self.junctions['inlet_A'].get_massflow()
-        hA_out = CPPSI('H', 'T', self.TAo_subcool, 'P', self.junctions['inlet_B'].get_pressure(), self.junctions['inlet_B'].medium)
+        hB_out = CPPSI('H', 'T', self.TAo_desuperheat, 'P', self.junctions['inlet_B'].get_pressure(), self.junctions['inlet_B'].medium)
 
         self.junctions['outlet_A'].set_values(p=self.p, h=hout, mdot=mdot)
         self.junctions['inlet_A'].set_values(p=self.p)
-        self.junctions['outlet_B'].set_values(h=hA_out)
+        self.junctions['outlet_B'].set_values(h=hB_out)
 
     def update_inlet_interfaces(self):
         self.mdot_ref = self.junctions['inlet_A'].get_massflow()
