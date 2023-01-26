@@ -17,7 +17,7 @@ p_SL = 1e5  # pressure coolant
 
 # components
 system = vcs.System(id='system', tolerance=1e-8)
-cond = vcs.CondenserBPHE(id='cond', system=system, k=[300., 300., 300.], area=0.8, subcooling=0.1)
+cond = vcs.CondenserBPHE(id='cond', system=system, k=[300., 3000., 300.], area=0.8, subcooling=0.1)
 srcSL = vcs.Source(id='src_SL', system=system, mdot=mdot_SL, p=p_SL, h=h_SL_in)
 snkSL = vcs.Sink('snk_SL', system)
 srcRef = vcs.Source('src_ref', system, mdot_ref, p_ref, h_ref_in)
@@ -43,10 +43,17 @@ cond_snkSL = vcs.Junction('cond_snkSL', system, SL, cond, 'outlet_B', snkSL, 'in
 # print('Difference = {}'.format(Qdot_refside+Qdot_coolantside))
 
 mdot_ref_range = np.arange(0.01, 0.05, 0.005)
-results = {'Qdot_refside': [], 'Qdot_coolantside': [], 'pC': []}
+Qdot_refside = np.array([])
+Qdot_coolantside = np.array([])
+pC = np.array([])
+
+print('Relative error:')
 for mdot_ref_set in mdot_ref_range:
     srcRef.set_mdot(mdot_ref_set)
     system.run()
-    results['Qdot_refside'].append((srcRef_cond.get_enthalpy() - cond_snkRef.get_enthalpy()) * srcRef_cond.get_massflow())
-    results["Qdot_coolantside"].append((srcSL_cond.get_enthalpy() - cond_snkSL.get_enthalpy()) * srcSL_cond.get_massflow())
-    results['pC'].append(cond_snkRef.get_pressure())
+    Qdot_refside = cond.mdot_ref * (srcRef_cond.h - cond_snkRef.h)
+    Qdot_coolantside = cond.mdot_SL * (srcSL_cond.h - cond_snkSL.h)
+    print((Qdot_refside+Qdot_coolantside)/Qdot_coolantside)
+
+system.get_export_variables()
+

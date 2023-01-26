@@ -150,6 +150,13 @@ class System:
         # create the top right side (Ts-diagram)
         plt.subplot(222)
 
+    def get_export_variables(self):
+        dump_dict = dict()
+        for comp in self.components:
+            dump_dict.update(comp.dump_export_variables())
+
+        return dump_dict
+
 
 class Component:
     def __init__(self, id: str, system: object):
@@ -158,11 +165,13 @@ class Component:
 
         self.id = id
 
-        self.parameters = {}
+        self.parameters = dict()
 
         self.junctions = {'inlet_A': None, 'outlet_A': None}
 
         self.statechange = None
+
+        self.export_variables = dict()
 
     def print_parameters(self):
         print(self.parameters)
@@ -183,6 +192,18 @@ class Component:
 
     def get_ph_data(self, npoints: int):
         pass
+
+    def define_export_variables(self):
+        print('{} has no export_variables defined.'.format(self.id))
+        return
+
+    def dump_export_variables(self):
+        self.define_export_variables()
+        dump_dict = {}
+        for var_key in self.export_variables:
+            key = '.'.join([self.id, var_key])
+            dump_dict[key] = self.export_variables[var_key]
+        return dump_dict
 
 
 class Junction:
@@ -252,7 +273,7 @@ class Junction:
         return text
 
 
-class Compressor_efficiency(Component):
+class CompressorEfficiency(Component):
     def __init__(self, id: str, system: object, etaS: float, etaV:float, stroke: float, speed: float, etaEL:float = 1.):
         super().__init__(id, system)
         self.etaS = etaS
@@ -508,6 +529,16 @@ class CondenserBPHE(Component):
         self.TAo_condenser = Tmean
         self.TAo_subcool = Tmean
 
+    def define_export_variables(self):
+        self.export_variables = {
+            'mdot_ref': self.mdot_ref,
+            'mdot_SL': self.mdot_SL,
+            'p_ref': self.p,
+            'T_ref_in': self.T_ref_in,
+            'T_SL_in': self.T_SL_in,
+            'T_SL_out': self.TAo_subcool,
+        }
+        return
 
     def model(self, x):
         mdot_ref = self.mdot_ref
@@ -535,7 +566,7 @@ class CondenserBPHE(Component):
         cpR_liq = CPPSI("C", "T", TC, "Q", 0, self.ref_string)
         cpSL = CPPSI("C", "T", TSL_in, "P", 1.0e5, self.SL_string)
 
-        # Calculate the mean logaritmic temperature value for all three sections of the condenser
+        # Calculate the mean logarithmic temperature value for all three sections of the condenser
         LMTD = np.zeros(3)
         LMTD[0] = lmtd_calc(Tref_in, TC, TSL_out, TSL_1)
         LMTD[1] = lmtd_calc(TC, TC, TSL_1, TSL_2)
@@ -602,6 +633,7 @@ class CondenserBPHE(Component):
         self.T_ref_in = self.junctions['inlet_A'].get_temperature()
         self.mdot_SL = self.junctions['inlet_B'].get_massflow()
         self.T_SL_in = self.junctions['inlet_B'].get_temperature()
+
 
 class Evaporator(Component):
     def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, boundary_switch: bool, limit_temp: bool):
@@ -839,6 +871,14 @@ class Source(Component):
     def initialize(self):
         pass
 
+    def define_export_variables(self):
+        self.export_variables = {
+            'mdot': self.mdot,
+            'p': self.p,
+            'h': self.h
+        }
+        return
+
     def calc(self):
         self.junctions['outlet_A'].set_values(mdot=self.mdot, p=self.p, h=self.h)
 
@@ -863,6 +903,14 @@ class Sink(Component):
 
     def initialize(self):
         pass
+
+    def define_export_variables(self):
+        self.export_variables = {
+            'mdot': self.mdot,
+            'p': self.p,
+            'h': self.h
+        }
+        return
 
     def calc(self):
         j = self.junctions['inlet_A']
