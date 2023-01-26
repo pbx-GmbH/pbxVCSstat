@@ -27,7 +27,7 @@ h_air_in = CPPSI('H', 'T', T_box, 'P', p_air, air)
 
 # Instantiate components
 system = vcs.System(id='system', tolerance=1.)
-cpr = vcs.Compressor_efficiency(id='cpr', system=system, etaS=0.645, etaV=0.82, etaEL=0.775, stroke=15e-6, speed=cpr_speed)
+cpr = vcs.CompressorEfficiency(id='cpr', system=system, etaS=0.645, etaV=0.82, etaEL=0.775, stroke=15e-6, speed=cpr_speed)
 cond = vcs.Condenser(id='cond', system=system, k=[380., 380., 380.], area=0.565, subcooling=0.1, T_air_in=T_amb, mdot_air_in=mdot_air_cond)
 ihx = vcs.IHX(id='ihx', system=system, UA=5.3)
 evap = vcs.Evaporator(id='evap', system=system, k=[420., 420.], area=1., superheat=superheat, boundary_switch=True, limit_temp=True)

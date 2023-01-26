@@ -636,7 +636,7 @@ class CondenserBPHE(Component):
 
 
 class Evaporator(Component):
-    def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, boundary_switch: bool, limit_temp: bool):
+    def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, boundary_switch: bool, limit_temp: bool, initial_areafractions: iter = None):
         super().__init__(id, system)
         if len(k) == 2:
             self.k = k
@@ -658,14 +658,23 @@ class Evaporator(Component):
         self.junctions['inlet_B'] = None
         self.junctions['outlet_B'] = None
 
+        if initial_areafractions:
+            if len(initial_areafractions) != 2:
+                raise ValueError('{} allows only initial_areafraction of size 2, but got size {}'.format(self.id, len(initial_areafractions)))
+            self.xE1 = initial_areafractions[0]
+            self.xE2 = initial_areafractions[1]
+
+        else:
+            self.xE1 = 0.8
+            self.xE2 = 1 - self.xE1
+
     def initialize(self):
         self.p = self.junctions['inlet_A'].get_pressure()
         self.TSL1 = self.junctions['inlet_B'].get_temperature()
         self.T0 = CPPSI('T', 'P', self.p, 'Q', 0, self.junctions['inlet_A'].medium)
         self.TSL2 = self.TSL1 - (self.TSL1 - self.T0) * 0.8
         self.TSLmid = (self.TSL1 + self.TSL2)/2
-        self.xE1 = 0.8
-        self.xE2 = 1 - self.xE1
+
 
     def model(self, x):
         TSLi = self.junctions['inlet_B'].get_temperature()
