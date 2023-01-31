@@ -1,5 +1,4 @@
 import numpy as np
-
 import VCSpbx as vcs
 from CoolProp.CoolProp import PropsSI as CPPSI
 

@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import fsolve
 from CoolProp.CoolProp import PropsSI as CPPSI
-from fmipp.export.FMIAdapterV2 import FMIAdapterV2
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from imageio import imread
 
@@ -49,7 +49,7 @@ class System:
 
     def run(self, full_output=False):
         # initialize the system and all components
-        self.initialize()
+        # self.initialize()
         # first get the current enthalpy values
         old_enthalpies = self.get_junction_enthalpies()
         counter = 0
@@ -122,7 +122,7 @@ class System:
     def get_junction_enthalpies(self):
         return np.array([junc.get_enthalpy() for junc in self.junctions])
 
-    def plotCycle(self, dict: dict, cycle_img_path: str):
+    def plot_cycle(self, dict: dict, cycle_img_path: str):
         # TODO check if cycle image is a file
 
         # initiate the subplots
@@ -156,6 +156,26 @@ class System:
             dump_dict.update(comp.dump_export_variables())
 
         return dump_dict
+
+    def parameter_variation(self, parameters):
+        self.results_parameter_variation = list()
+        for params in tqdm(parameters):
+            for param in params:
+                comp = param['component']
+                p = param['parameter']
+                value = param['value']
+
+                comp.update_parameter(p, value)
+
+            res_dict = dict()
+            try:
+                self.run()
+                res_dict = self.get_export_variables()
+                res_dict['converged'] = True
+            except:
+                res_dict['converged'] = False
+
+            self.results_parameter_variation.append(res_dict)
 
 
 class Component:
@@ -336,6 +356,19 @@ class CompressorEfficiency(Component):
         p = np.linspace(pin, pout, npoints)
         h = np.linspace(hin, hout, npoints)
         return [p, h]
+
+    def update_parameter(self, param, value):
+        if param == 'speed':
+            self.set_speed(value)
+
+        else:
+            raise ValueError('Cannot set parameter {}'.format(param))
+
+    def define_export_variables(self):
+        self.export_variables = {
+            'speed': self.speed,
+        }
+        return
 
 
 class Condenser(Component):
@@ -537,6 +570,9 @@ class CondenserBPHE(Component):
             'T_ref_in': self.T_ref_in,
             'T_SL_in': self.T_SL_in,
             'T_SL_out': self.TAo_subcool,
+            'fA_desuperheat': self.areafraction_desuperheat,
+            'fA_condensing': self.areafraction_condenser,
+            'fA_subcool': self.areafraction_subcool
         }
         return
 
@@ -634,6 +670,16 @@ class CondenserBPHE(Component):
         self.mdot_SL = self.junctions['inlet_B'].get_massflow()
         self.T_SL_in = self.junctions['inlet_B'].get_temperature()
 
+    def update_parameter(self, param, value):
+        if param == 'k':
+            self.set_k_value(value)
+
+        else:
+            raise ValueError('Cannot set parameter {}'.format(param))
+
+    def set_k_value(self, k):
+        self.k = k
+
 
 class Evaporator(Component):
     def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, boundary_switch: bool, limit_temp: bool, initial_areafractions: iter = None):
@@ -675,6 +721,14 @@ class Evaporator(Component):
         self.TSL2 = self.TSL1 - (self.TSL1 - self.T0) * 0.8
         self.TSLmid = (self.TSL1 + self.TSL2)/2
 
+    def define_export_variables(self):
+        self.export_variables = {
+            'T0': self.T0,
+            'fA_evaporating': self.xE1,
+            'fA_superheat': self.xE2,
+            'p': self.p
+        }
+        return
 
     def model(self, x):
         TSLi = self.junctions['inlet_B'].get_temperature()
@@ -777,6 +831,16 @@ class Evaporator(Component):
         res[0:4] = res[0:4]/Qdot
         return res
 
+    def update_parameter(self, param, value):
+        if param == 'k':
+            self.set_k_value(value)
+
+        else:
+            raise ValueError('Cannot set parameter {}'.format(param))
+
+    def set_k_value(self, k):
+        self.k = k
+
 
 class IHX(Component):
     def __init__(self, id: str, system: object, UA: float):
@@ -864,6 +928,27 @@ class IHX(Component):
         x[1] = self.TB_out
         return self.model(x)
 
+    def update_parameter(self, param, value):
+        if param == 'k':
+            self.set_k_value(value)
+
+        else:
+            raise ValueError('Cannot set parameter {}'.format(param))
+
+    def set_k_value(self, k):
+        self.k = k
+
+    def define_export_variables(self):
+        self.export_variables = {
+            'TA_in': self.TA_in,
+            'TA_out': self.TA_out,
+            'TB_in': self.TB_in,
+            'TB_out': self.TB_out,
+            'UA': self.UA,
+            'mdot': self.mdot
+        }
+        return
+
 
 class Source(Component):
     def __init__(self, id: str, system: object, mdot=None, p=None, h=None):
@@ -896,6 +981,19 @@ class Source(Component):
 
     def set_mdot(self, mdot):
         self.mdot = mdot
+
+    def set_pressure(self, p):
+        self.p = p
+
+    def update_parameter(self, param, value):
+        if param == 'h':
+            self.set_enthalpy(value)
+        elif param == 'mdot':
+            self.set_mdot(value)
+        elif param == 'p':
+            self.set_pressure(value)
+        else:
+            raise ValueError('Cannot set parameter {}'.format(param))
 
 
 class Sink(Component):
@@ -1026,48 +1124,3 @@ class HeatExchanger(Component):
         x[0] = self.TA_o
         x[1] = self.TB_o
         return self.model(x)
-
-
-class FMUExportClass(FMIAdapterV2):
-    def __init__(self, currentCommunicationPoint, system: object, fmu_dict: dict):
-        self.system = system
-        self.fmu_dict = fmu_dict
-
-        # check the keys of the fmu_dict
-        if not ('Parameters' in fmu_dict.keys()):
-            raise ValueError('Parameters not defined in fmu_dict')
-
-        if not ('Inputs' in fmu_dict.keys()):
-            raise ValueError('Inputs not defined in fmu_dict')
-
-        if not ('Outputs' in fmu_dict.keys()):
-            raise ValueError('Outputs not defined in fmu_dict')
-
-        # get the fmu inputs
-        self.defineRealInputs(list(fmu_dict['Inputs'].keys()))
-
-        # get the fmu outputs
-        self.defineRealOutputs(list(fmu_dict['Outputs'].keys()))
-
-        # get the fmu parameters
-        self.defineRealParameters(list(fmu_dict['Parameters'].keys()))
-
-        self.system.initialize()
-
-    def doStep(self, currentCommunicationPoint, communicationStepSize):
-        # make the sumulation step
-        # first get the new inputs and ingest them into the system
-        inputs = self.getRealInputValues()
-        for key, value in inputs:
-            evalstr = 'self.system.' + self.fmu_dict['Inputs'][key]
-            eval(evalstr)(value)
-
-        # run the model
-        self.system.run()
-
-        # get the outputs and hand them over to the FMU
-        outputs = dict()
-        for key in self.fmu_dict['Outputs']:
-            evalstr = 'self.system.' + self.fmu_dict['Outputs'][key]
-            outputs[key] = eval(evalstr)()
-        self.setRealOutputValues(outputs)
