@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.optimize
 from scipy.optimize import fsolve
 from CoolProp.CoolProp import PropsSI as CPPSI
 from tqdm import tqdm
@@ -47,10 +48,14 @@ class System:
         self.residual_enthalpy = None
         self.residual_functions = {}
 
+        self.residual_dict = {}
+
     def run(self, full_output=False):
         # initialize the system and all components
         # self.initialize()
         # first get the current enthalpy values
+
+
         old_enthalpies = self.get_junction_enthalpies()
         counter = 0
         while True:
@@ -62,28 +67,34 @@ class System:
             # calculate the delta
             abs_delta = np.abs(old_enthalpies - new_enthalpies)
 
+            for i, junc in enumerate(self.junctions):
+                self.residual_dict[junc.id] = abs_delta[i]
+
             # get the residual of the functions
             fun_residual = np.array([])
             for comp in self.components:
                 res = np.array(comp.get_function_residual())
                 fun_residual = np.append(fun_residual, np.abs(res))
+                for i, fr in enumerate(res):
+                    key = '{}.{}'.format(comp.id, i)
+                    self.residual_dict[key] = fr
 
             # check if delta is lower than tolerance
             if np.max(abs_delta) < self.tolerance and np.max(fun_residual) < self.fun_tol:
                 break
             counter += 1
+            if counter >= 10:
+                a = 0
             if counter > self.n_max:
                 print('Reached {} iterations without solution'.format(counter))
                 for comp in self.components:
                     self.residual_functions[comp.id] = comp.get_function_residual()
                 self.residual_enthalpy = abs_delta
+                print('Residual enthalpies: {}'.format(abs_delta))
+                print('Function residual: {}'.format(fun_residual))
                 return False
 
             old_enthalpies = new_enthalpies.copy()
-        # Helper
-        #     for junc in self.junctions:
-                # print([junc.id, junc.T, junc.h])
-            # print('--')
 
         self.residual_enthalpy = abs_delta
 
@@ -93,7 +104,8 @@ class System:
         if full_output:
             print('---')
             print('Iteration finished after {} iterations'.format(counter))
-            print('Residual enthalpies difference: {}'.format(abs_delta))
+            print('---\nResidual enthalpies difference:')
+            [print('{}: {}'.format(key, self.residual_dict[key])) for key in self.residual_dict]
             print('---\nJUNCTIONS:')
             for junc in self.junctions:
                 print(junc.id)
@@ -157,8 +169,12 @@ class System:
 
         return dump_dict
 
-    def parameter_variation(self, parameters):
+    def parameter_variation(self, parameters: iter, function_tolerance: float = 0.1, enthalpy_tolerance: float = 1.):
         self.results_parameter_variation = list()
+
+        self.tolerance = enthalpy_tolerance
+        self.fun_tol = function_tolerance
+
         for params in tqdm(parameters):
             for param in params:
                 comp = param['component']
@@ -166,6 +182,7 @@ class System:
                 value = param['value']
 
                 comp.update_parameter(p, value)
+                # print(param)
 
             res_dict = dict()
             try:
@@ -205,7 +222,7 @@ class Component:
                 raise ValueError('{} has no junction at port {}.'.format(self.id, key))
 
     def get_function_residual(self):
-        return 0.0
+        return [0.0]
 
     def get_Ts_data(self, npoints: int):
         pass
@@ -680,6 +697,21 @@ class CondenserBPHE(Component):
     def set_k_value(self, k):
         self.k = k
 
+    def get_function_residual(self):
+        x = np.zeros(7)
+        x[0] = self.TC
+        x[1] = self.TAo_desuperheat
+        x[2] = self.TAo_condenser
+        x[3] = self.TAo_subcool
+        x[4] = self.areafraction_desuperheat
+        x[5] = self.areafraction_condenser
+        x[6] = self.areafraction_subcool
+
+        res = self.model(x)
+        Qdot = self.junctions['inlet_A'].get_massflow() * (self.junctions['outlet_A'].get_enthalpy() - self.junctions['inlet_A'].get_enthalpy())
+        res[0:6] = res[0:6]/Qdot
+        return res
+
 
 class Evaporator(Component):
     def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, boundary_switch: bool, limit_temp: bool, initial_areafractions: iter = None):
@@ -801,8 +833,9 @@ class Evaporator(Component):
         x[3] = self.xE1
         x[4] = self.xE2
 
-        x = fsolve(self.model, x0=x, xtol=self.system.fun_tol)
-
+        # x = fsolve(self.model, x0=x, xtol=self.system.fun_tol)
+        sol = scipy.optimize.root(self.model, x0=x, tol=self.system.fun_tol)
+        x = sol.x
         self.T0 = x[0]
         self.TSL2 = x[1]
         self.TSLmid = x[2]
