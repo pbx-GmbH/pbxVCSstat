@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.optimize
 from scipy.optimize import fsolve
+import CoolProp
 from CoolProp.CoolProp import PropsSI as CPPSI
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -13,7 +14,7 @@ def lmtd_calc(Thi, Tho, Tci, Tco):
     dT2 = Tho - Tci
     if dT2 == 0:
         dT2 = 0.01
-    if dT1 == dT2:
+    if np.abs(dT1-dT2) < 0.1:
         LMTD = dT1
     else:
         LMTD = (dT1 - dT2) / np.log(dT1 / dT2)
@@ -1157,3 +1158,248 @@ class HeatExchanger(Component):
         x[0] = self.TA_o
         x[1] = self.TB_o
         return self.model(x)
+
+
+class EvaporatorJacob(Component):
+    def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, boundary_switch: bool, limit_temp: bool, initial_areafractions: iter = None):
+        super().__init__(id, system)
+        if len(k) == 2:
+            self.k_ev = k[0]
+            self.k_sh = k[1]
+        else:
+            raise ValueError('k has to be of length 2. len(k) = {}'.format(len(k)))
+
+        self.area = area
+        self.superheat = superheat
+        self.boundary_switch = boundary_switch
+        self.limit_temp = limit_temp
+        self.T0 = None
+        self.TSL2 = None
+        self.TSLmid = None
+        self.xE1 = None
+        self.xE2 = None
+
+        self.TSL_in = None
+
+        self.junctions['inlet_B'] = None
+        self.junctions['outlet_B'] = None
+
+        if initial_areafractions:
+            if len(initial_areafractions) != 2:
+                raise ValueError('{} allows only initial_areafraction of size 2, but got size {}'.format(self.id, len(initial_areafractions)))
+            self.xE1 = initial_areafractions[0]
+            self.xE2 = initial_areafractions[1]
+
+        else:
+            self.xE1 = 0.8
+            self.xE2 = 1 - self.xE1
+
+    def initialize(self):
+        self.p = self.junctions['inlet_A'].get_pressure()
+        self.TSL1 = self.junctions['inlet_B'].get_temperature()
+        self.T0 = CPPSI('T', 'P', self.p, 'Q', 0, self.junctions['inlet_A'].medium)
+        self.TSL2 = self.TSL1 - (self.TSL1 - self.T0) * 0.8
+        self.TSLmid = (self.TSL1 + self.TSL2)/2
+
+        self.ref = self.junctions['inlet_A'].medium
+        self.ref_HEOS = CoolProp.AbstractState('HEOS', self.ref)
+
+        self.SL = self.junctions['inlet_B'].medium
+
+
+    def define_export_variables(self):
+        self.export_variables = {
+            'T0': self.T0,
+            'fA_evaporating': self.xE1,
+            'fA_superheat': self.xE2,
+            'p': self.p
+        }
+        return
+
+    def model_old(self, x):
+        TSLi = self.junctions['inlet_B'].get_temperature()
+        mSL = self.junctions['inlet_B'].get_massflow()
+        hRi = self.junctions['inlet_A'].get_enthalpy()
+        mR = self.junctions['inlet_A'].get_massflow()
+        ref = self.junctions['inlet_A'].medium
+        SL = self.junctions['inlet_B'].medium
+
+        # print('---EVAP---')
+        # print(self.junctions['inlet_A'].get_temperature())
+
+        # Boundaries for fsolve calculation to not cause the logaritmic mean temperature to generate NaN values (neg. logarithm)
+        # The refrigerants oulet temperature must not be higher than the coolants inlet temperature:
+
+        if self.boundary_switch:
+            if x[0] + self.superheat > TSLi:
+                x[0] = TSLi - self.superheat
+
+            # The evaporation temperature must not be higher than the coolants outlet temperature
+            if x[0] > x[1]:
+                x[0] = x[1] - 1e-6
+            if x[1] > x[2]:
+                x[1] = x[2] + 1e-3
+
+
+        # calculate material parameters
+        if (x[0] < 150.) and self.limit_temp:
+            cpR = CPPSI('C', 'T', 150., 'Q', 1, ref) * (x[0]/150.)  # generate a linear extrapolation for the iteration
+            hRGas = CPPSI("H", "T", 150., "Q", 1, ref) * (x[0]/150.)
+        else:
+            cpR = CPPSI('C', 'T', x[0], 'Q', 1, ref)  # heat capacity of fully evaporated refrigerant
+            hRGas = CPPSI("H", "T", x[0], "Q", 1, ref)  # enthalpy of fully evaporated refrigerant
+
+        cpSL = CPPSI('C', 'T', (TSLi + x[1]) / 2, 'P', 1e5, SL)  # heat capacity of secondary liquid
+
+        # Calculate the mean logarithmic temperature value for all two sections of the condenser
+        LMTD = np.zeros(2)
+        LMTD[0] = lmtd_calc(x[2], x[1], x[0], x[0])
+        LMTD[1] = lmtd_calc(TSLi, x[2], x[0], self.superheat + x[0])
+
+        # Formulation of the equation system as according to fsolve documentation ( 0 = ... ).
+        # The equation set  and model definition is documented in the model description.
+        f = np.zeros(5)
+
+        # energy balance evaporating zone between refrigerant and sec. liquid
+        f[0] = mR * (hRGas - hRi) - mSL * cpSL * (x[2] - x[1])
+
+        # energy balance evaporating zone between refrigerant and LMTD model
+        f[1] = mR * (hRGas - hRi) - self.k[0] * x[3] * self.area * LMTD[0]
+
+        # energy balance superheating zone between refrigerant and sec. liquid
+        # f[ 2 ] = mR * (hRSuperheated - hRGas) - mSL * cpSL * (TSLi - x[ 2 ])
+        f[2] = mR * cpR * self.superheat - mSL * cpSL * (TSLi - x[2])
+
+        # energy balance superheating zone between refrigerant and LMTD model
+        # f[3] = mR * (hRSuperheated-hRGas) - k[1] * x[4]/100 * Atot * LMTD[1]
+        f[3] = mR * cpR * self.superheat - self.k[1] * x[4] * self.area * LMTD[1]
+
+        # area fraction balance (1 = x_evaporating + x_superheating)
+        f[4] = 1 - x[3] - x[4]
+
+        return f
+
+    def calc_old(self):
+        x = np.zeros(5)
+        x[0] = self.T0
+        x[1] = self.TSL2
+        x[2] = self.TSLmid
+        x[3] = self.xE1
+        x[4] = self.xE2
+
+        # x = fsolve(self.model, x0=x, xtol=self.system.fun_tol)
+        sol = scipy.optimize.root(self.model, x0=x, tol=self.system.fun_tol)
+        x = sol.x
+        self.T0 = x[0]
+        self.TSL2 = x[1]
+        self.TSLmid = x[2]
+        self.xE1 = x[3]
+        self.xE2 = x[4]
+
+        self.p = CPPSI('P', 'T', self.T0, 'Q', 1, self.junctions['inlet_A'].medium)
+        Tout = self.T0 + self.superheat
+        hout = CPPSI('H', 'T', Tout, 'P', self.p, self.junctions['inlet_A'].medium)
+        self.junctions['outlet_A'].set_values(p=self.p, h=hout, mdot=self.junctions['inlet_A'].get_massflow())
+        hSL2 = CPPSI('H', 'T', self.TSL2, 'P', 1e5, self.junctions['inlet_B'].medium)
+        # self.junctions['inlet_A'].set_values(p=self.p)
+        self.junctions['outlet_B'].set_values(h=hSL2, mdot=self.junctions['inlet_B'].get_massflow())
+
+    def get_function_residual(self):
+        x = np.zeros(5)
+        x[0] = self.p
+        x[1] = self.TSL2
+        x[2] = self.TSLmid
+        x[3] = self.xE1
+        x[4] = self.xE2
+
+        # normalize the energy balance residuals
+        res = self.model(x)
+        Qdot = self.junctions['inlet_A'].get_massflow() * (self.junctions['outlet_A'].get_enthalpy() - self.junctions['inlet_A'].get_enthalpy())
+        res[0:4] = res[0:4]/Qdot
+        return res
+
+    def update_parameter(self, param, value):
+        if param == 'k':
+            self.set_k_value(value)
+
+        else:
+            raise ValueError('Cannot set parameter {}'.format(param))
+
+    def set_k_value(self, k):
+        self.k = k
+
+    def update_boundary_parameters(self):
+        self.hRi = self.junctions['inlet_A'].get_enthalpy()
+        self.mR = self.junctions['inlet_A'].get_massflow()
+
+        self.mSL = self.junctions['inlet_B'].get_massflow()
+        self.T_SLi = self.junctions['inlet_B'].get_temperature()
+
+    def model(self, x):
+        # x[0] = self.p
+        # x[1] = self.TSL2
+        # x[2] = self.TSLmid
+        # x[3] = self.xE1
+        # x[4] = self.xE2
+
+        cpSL = CPPSI('C', 'T', (self.T_SLi + x[1]) / 2, 'P', 1e5, self.SL)  # heat capacity of secondary liquid
+
+        self.ref_HEOS.update(CoolProp.PQ_INPUTS, x[0], 1)  # update the CoolProp handle of refrigerant
+        T0 = self.ref_HEOS.T()  # get saturation temperature
+        hGas = self.ref_HEOS.hmass()  # get enthalpy of saturated gas refrigerant
+        self.ref_HEOS.update(CoolProp.PT_INPUTS, x[0], T0+self.superheat)  # update the CoolProp handle of refrigerant
+        hRout = self.ref_HEOS.hmass()  # get enthalpy of refrigerant outlet
+
+        # Calculate the mean logarithmic temperature value for all two sections of the condenser
+        LMTD_ev = lmtd_calc(x[2], x[1], T0, T0)
+        LMTD_sh = lmtd_calc(self.T_SLi, x[2], T0, T0+self.superheat)
+
+        f = np.zeros(5)
+
+        f[0] = self.mR * (hGas - self.hRi) - self.mSL * cpSL * (x[2] - x[1])
+        f[1] = self.mR * (hGas - self.hRi) - x[3] * self.area * self.k_ev * LMTD_ev
+        f[2] = self.mR * (hRout - hGas) - self.mSL *  cpSL * (self.T_SLi - x[2])
+        f[3] = self.mR * (hRout - hGas) - x[4] * self.area * self.k_sh * LMTD_sh
+        f[4] = 1 - x[3] - x[4]
+
+        return f
+    #
+    #
+    # def dT0_dhRgas(self, h, ref):
+    #     if ref == "R290":
+    #         return 0.0000000035*h - 0.0031609875
+    #     else:
+    #         raise ValueError('Cannot calculate dT0 / dhGas of refrigerant {}'.format(ref))
+    #
+    # def T0_hRgas(self, h, ref):
+    #     if ref == "R290":
+    #         return 0.0000000035*h**2 - 0.0031609875*h + 919.8247650965
+    #     else:
+    #         raise ValueError('Cannot calculate dT0 / dhGas of refrigerant {}'.format(ref))
+
+    def calc(self):
+        self.update_boundary_parameters()
+
+        x = np.zeros(5)
+        x[0] = self.p
+        x[1] = self.TSL2
+        x[2] = self.TSLmid
+        x[3] = self.xE1
+        x[4] = self.xE2
+
+        # x = fsolve(self.model, x0=x, xtol=self.system.fun_tol)
+        sol = scipy.optimize.root(self.model, x0=x)
+        x = sol.x
+        self.p = x[0]
+        self.TSL2 = x[1]
+        self.TSLmid = x[2]
+        self.xE1 = x[3]
+        self.xE2 = x[4]
+
+        self.T0 = CPPSI('T', 'P', self.p, 'Q', 1, self.junctions['inlet_A'].medium)
+        Tout = self.T0 + self.superheat
+        hout = CPPSI('H', 'T', Tout, 'P', self.p, self.junctions['inlet_A'].medium)
+        self.junctions['outlet_A'].set_values(p=self.p, h=hout, mdot=self.junctions['inlet_A'].get_massflow())
+        hSL2 = CPPSI('H', 'T', self.TSL2, 'P', 1e5, self.junctions['inlet_B'].medium)
+        # self.junctions['inlet_A'].set_values(p=self.p)
+        self.junctions['outlet_B'].set_values(h=hSL2, mdot=self.junctions['inlet_B'].get_massflow())

@@ -85,7 +85,7 @@ system = vcs.System(id='system', tolerance=1.)
 cpr = vcs.CompressorEfficiency(id='cpr', system=system, etaS=0.645, etaV=0.82, etaEL=0.775, stroke=cpr_stroke, speed=cpr_speed)
 cond = vcs.CondenserBPHE(id='cond', system=system, k=k_cond, area=area_cond, subcooling=0.1, initial_areafractions=initial_areafraction_cond)
 ihx = vcs.IHX(id='ihx', system=system, UA=2.3)
-evap = vcs.Evaporator(id='evap', system=system, k=k_evap, area=area_evap, superheat=superheat, boundary_switch=True, limit_temp=True, initial_areafractions=initial_areafraction_evap)
+evap = vcs.EvaporatorJacob(id='evap', system=system, k=k_evap, area=area_evap, superheat=superheat, boundary_switch=True, limit_temp=True, initial_areafractions=initial_areafraction_evap)
 
 snkcold = vcs.Sink(id='snkcold', system=system)
 srccold = vcs.Source(id='srccold', system=system, mdot=mdot_SL_cold, p=p_SL, h=h_SL_cold_in)
