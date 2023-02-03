@@ -79,9 +79,9 @@ initial_areafraction_evap = [0.2, 0.8]
 # Instantiate components
 system = vcs.System(id='system', tolerance=1., fun_tol=1.)
 cpr = vcs.CompressorEfficiency(id='cpr', system=system, etaS=0.645, etaV=0.82, etaEL=0.775, stroke=cpr_stroke, speed=cpr_speed)
-cond = vcs.CondenserBPHENew(id='cond', system=system, k=k_cond, area=area_cond, subcooling=0.1, initial_areafractions=initial_areafraction_cond)
+cond = vcs.CondenserCounterflow(id='cond', system=system, k=k_cond, area=area_cond, subcooling=0.1, initial_areafractions=initial_areafraction_cond)
 ihx = vcs.IHX(id='ihx', system=system, UA=2.3)
-evap = vcs.EvaporatorJacob(id='evap', system=system, k=k_evap, area=area_evap, superheat=superheat, boundary_switch=True, limit_temp=True, initial_areafractions=initial_areafraction_evap)
+evap = vcs.EvaporatorCounterflow(id='evap', system=system, k=k_evap, area=area_evap, superheat=superheat, initial_areafractions=initial_areafraction_evap)
 
 snkcold = vcs.Sink(id='snkcold', system=system)
 srccold = vcs.Source(id='srccold', system=system, mdot=mdot_SL_cold, p=p_SL, h=h_SL_cold_in)
@@ -90,17 +90,17 @@ snkhot = vcs.Sink(id='snkhot', system=system)
 srchot = vcs.Source(id='srchot', system=system, mdot=mdot_SL_hot, p=p_SL, h=h_SL_hot_in)
 
 # connections
-cpr_cond = vcs.Junction(id='cpr_cond', system=system, medium=ref, upstream_component=cpr, upstream_id='outlet_A', downstream_component=cond, downstream_id='inlet_A', mdot_init=mdot_ref_init, p_init=pc_init, h_init=h2_init)
-cond_ihx = vcs.Junction(id='cond_ihx', system=system, medium=ref, upstream_component=cond, upstream_id='outlet_A', downstream_component=ihx, downstream_id='inlet_A', mdot_init= mdot_ref_init, p_init=pc_init, h_init=h3_init)
-ihx_evap = vcs.Junction(id='ihx_evap', system=system, medium=ref, upstream_component=ihx, upstream_id='outlet_A', downstream_component=evap, downstream_id='inlet_A', mdot_init= mdot_ref_init, p_init=p0_init, h_init=h4_init)
-evap_ihx = vcs.Junction(id='evap_ihx', system=system, medium=ref, upstream_component=evap, upstream_id='outlet_A', downstream_component=ihx, downstream_id='inlet_B', mdot_init=mdot_ref_init, p_init=p0_init, h_init=h5_init)
-ihx_cpr = vcs.Junction(id='ihx_cpr', system=system, medium=ref, upstream_component=ihx, upstream_id='outlet_B', downstream_component=cpr, downstream_id='inlet_A', mdot_init=mdot_ref_init, p_init=p0_init, h_init=h1_init)
+cpr_cond = vcs.Junction(id='cpr_cond', system=system, medium=ref, upstream_component=cpr, upstream_port_id='outlet_A', downstream_component=cond, downstream_port_id='inlet_A', mdot_init=mdot_ref_init, p_init=pc_init, h_init=h2_init)
+cond_ihx = vcs.Junction(id='cond_ihx', system=system, medium=ref, upstream_component=cond, upstream_port_id='outlet_A', downstream_component=ihx, downstream_port_id='inlet_A', mdot_init= mdot_ref_init, p_init=pc_init, h_init=h3_init)
+ihx_evap = vcs.Junction(id='ihx_evap', system=system, medium=ref, upstream_component=ihx, upstream_port_id='outlet_A', downstream_component=evap, downstream_port_id='inlet_A', mdot_init= mdot_ref_init, p_init=p0_init, h_init=h4_init)
+evap_ihx = vcs.Junction(id='evap_ihx', system=system, medium=ref, upstream_component=evap, upstream_port_id='outlet_A', downstream_component=ihx, downstream_port_id='inlet_B', mdot_init=mdot_ref_init, p_init=p0_init, h_init=h5_init)
+ihx_cpr = vcs.Junction(id='ihx_cpr', system=system, medium=ref, upstream_component=ihx, upstream_port_id='outlet_B', downstream_component=cpr, downstream_port_id='inlet_A', mdot_init=mdot_ref_init, p_init=p0_init, h_init=h1_init)
 
-srccold_evap = vcs.Junction(id='srccold_evap', system=system, medium=SL, upstream_component=srccold, upstream_id='outlet_A', downstream_component=evap, downstream_id='inlet_B', mdot_init=mdot_SL_cold, p_init=p_SL, h_init=h_SL_cold_in)
-evap_snkcold = vcs.Junction(id='evap_snkcold', system=system, medium=SL, upstream_component=evap, upstream_id='outlet_B', downstream_component=snkcold, downstream_id='inlet_A', mdot_init=mdot_SL_cold, p_init=p_SL, h_init=h_SL_cold_in)
+srccold_evap = vcs.Junction(id='srccold_evap', system=system, medium=SL, upstream_component=srccold, upstream_port_id='outlet_A', downstream_component=evap, downstream_port_id='inlet_B', mdot_init=mdot_SL_cold, p_init=p_SL, h_init=h_SL_cold_in)
+evap_snkcold = vcs.Junction(id='evap_snkcold', system=system, medium=SL, upstream_component=evap, upstream_port_id='outlet_B', downstream_component=snkcold, downstream_port_id='inlet_A', mdot_init=mdot_SL_cold, p_init=p_SL, h_init=h_SL_cold_in)
 
-srchot_cond = vcs.Junction(id='srchot_cond', system=system, medium=SL, upstream_component=srchot, upstream_id='outlet_A', downstream_component=cond, downstream_id='inlet_B', mdot_init=mdot_SL_hot, p_init=p_SL, h_init=h_SL_hot_in)
-cond_snkhot = vcs.Junction(id='cond_snkhot', system=system, medium=SL, upstream_component=cond, upstream_id='outlet_B', downstream_component=snkhot, downstream_id='inlet_A', mdot_init=mdot_SL_hot, p_init=p_SL, h_init=h_SL_hot_in)
+srchot_cond = vcs.Junction(id='srchot_cond', system=system, medium=SL, upstream_component=srchot, upstream_port_id='outlet_A', downstream_component=cond, downstream_port_id='inlet_B', mdot_init=mdot_SL_hot, p_init=p_SL, h_init=h_SL_hot_in)
+cond_snkhot = vcs.Junction(id='cond_snkhot', system=system, medium=SL, upstream_component=cond, upstream_port_id='outlet_B', downstream_component=snkhot, downstream_port_id='inlet_A', mdot_init=mdot_SL_hot, p_init=p_SL, h_init=h_SL_hot_in)
 
 system.initialize()
 system.run(full_output=True)
