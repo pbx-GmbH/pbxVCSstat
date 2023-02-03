@@ -35,6 +35,40 @@ def dh_cond(TC, medium):
     return dh
 
 
+def generate_parameter_list(parameters: iter):
+    # FOR DEBUG:
+    cpr_range = np.array([1000., 1100., 1250., 1500.])
+    T_SL_cold_in_range = np.arange(-10, -8, 1) + 273.15
+    T_SL_hot_in_range = np.arange(20, 22, 1) + 273.15
+    parameters = [cpr_range, T_SL_hot_in_range, T_SL_cold_in_range]
+
+
+    # cpr_range = np.array([1000., 1100., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
+    # T_SL_cold_in_range = np.arange(-10, 10, 1) + 273.15
+    # T_SL_hot_in_range = np.arange(20, 50.1, 1) + 273.15
+
+    h_SL_hot_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_hot_in_range])
+    h_SL_cold_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_cold_in_range])
+
+    return_list = list()
+    return_list.append([
+        {'component': cpr, 'parameter': 'speed', 'value': cpr_range[0]},
+        {'component': srchot, 'parameter': 'h', 'value': h_SL_hot_in_range[0]},
+        {'component': srccold, 'parameter': 'h', 'value': h_SL_cold_in_range[0]}
+    ])
+
+    for h_SL_cold in h_SL_cold_in_range:
+        return_list.append([{'component': srccold, 'parameter': 'h', 'value': h_SL_cold}])
+        for h_SL_hot in h_SL_hot_in_range:
+            return_list.append([{'component': srchot, 'parameter': 'h', 'value': h_SL_hot}])
+            for cpr_speed in cpr_range:
+                return_list.append([{'component': cpr, 'parameter': 'speed', 'value': cpr_speed}])
+            cpr_range = cpr_range[::-1]
+        h_SL_hot_in_range = h_SL_hot_in_range[::-1]
+
+    return return_list
+
+
 class System:
     def __init__(self, id: str, tolerance: float, n_max: int = 100, fun_tol: float = 0.1):
         self.id = id
@@ -170,20 +204,17 @@ class System:
 
         return dump_dict
 
-    def parameter_variation(self, parameters: iter, function_tolerance: float = 0.1, enthalpy_tolerance: float = 1.):
+    def parameter_variation(self, parameters: iter, parameter_handles: iter, function_tolerance: float = 0.1, enthalpy_tolerance: float = 1.):
         self.results_parameter_variation = list()
 
         self.tolerance = enthalpy_tolerance
         self.fun_tol = function_tolerance
 
         for params in tqdm(parameters):
-            for param in params:
-                comp = param['component']
-                p = param['parameter']
-                value = param['value']
 
-                comp.update_parameter(p, value)
-                # print(param)
+            # update the parameters
+            for i, p in tqdm(params):
+                parameter_handles[i](p)
 
             res_dict = dict()
             try:
@@ -194,6 +225,9 @@ class System:
                 res_dict['converged'] = False
 
             self.results_parameter_variation.append(res_dict)
+
+
+
 
 
 class Component:
@@ -1206,7 +1240,6 @@ class EvaporatorJacob(Component):
 
         self.SL = self.junctions['inlet_B'].medium
 
-
     def define_export_variables(self):
         self.export_variables = {
             'T0': self.T0,
@@ -1328,7 +1361,7 @@ class EvaporatorJacob(Component):
     def set_k_value(self, k):
         self.k = k
 
-    def update_boundary_parameters(self):
+    def update_inlet_interfaces(self):
         self.hRi = self.junctions['inlet_A'].get_enthalpy()
         self.mR = self.junctions['inlet_A'].get_massflow()
 
@@ -1378,7 +1411,7 @@ class EvaporatorJacob(Component):
     #         raise ValueError('Cannot calculate dT0 / dhGas of refrigerant {}'.format(ref))
 
     def calc(self):
-        self.update_boundary_parameters()
+        self.update_inlet_interfaces()
 
         x = np.zeros(5)
         x[0] = self.p
@@ -1403,3 +1436,189 @@ class EvaporatorJacob(Component):
         hSL2 = CPPSI('H', 'T', self.TSL2, 'P', 1e5, self.junctions['inlet_B'].medium)
         # self.junctions['inlet_A'].set_values(p=self.p)
         self.junctions['outlet_B'].set_values(h=hSL2, mdot=self.junctions['inlet_B'].get_massflow())
+
+
+class CondenserBPHENew(Component):
+    def __init__(self, id: str, system: object, k: iter, area: float, subcooling: float, initial_areafractions: iter = None):
+        super().__init__(id, system)
+        if len(k) != 3:
+            raise ValueError('k must be of length 3, but len(k) = {}'.format(len(k)))
+        else:
+            self.k_dsh = k[0]
+            self.k_cond = k[1]
+            self.k_sc = k[2]
+        self.area = area
+        self.dTSC = subcooling
+        # self.parameters = {'UA': self.UA, 'subcooling': self.dTSC}
+
+
+        self.TC = None
+        self.T_SL1 = None
+        self.T_SL2 = None
+        self.T_SLo = None
+        self.f_dsh = None
+        self.f_cond = None
+        self.f_sc = None
+        self.p = None
+
+        self.junctions['inlet_B'] = None
+        self.junctions['outlet_B'] = None
+
+        if initial_areafractions:
+            if len(initial_areafractions) != 3:
+                raise ValueError('initial_areafractions must be of len 3')
+            self.f_dsh = initial_areafractions[0]
+            self.f_cond = initial_areafractions[1]
+            self.f_sc = initial_areafractions[2]
+        else:
+            self.f_dsh = 0.1
+            self.f_cond = 0.8
+            self.f_sc = 0.1
+
+    def initialize(self):
+        self.update_inlet_interfaces()
+        self.ref = self.junctions['inlet_A'].medium
+        self.ref_HEOS = CoolProp.AbstractState('HEOS', self.ref)
+        self.SL = self.junctions['inlet_B'].medium
+
+        self.p = self.junctions['inlet_A'].get_pressure()
+        self.ref_HEOS.update(CoolProp.PQ_INPUTS, self.p, 0)
+        self.TC = self.ref_HEOS.T()
+        h_liquid = self.ref_HEOS.hmass()
+        QC = self.mdot_ref * (self.h_ref_in - h_liquid)
+        cpSL = CPPSI('C', 'T', self.T_SLi, 'P', 1e5, self.SL)  # heat capacity of secondary liquid
+        dTSL = QC/(self.mdot_SL * cpSL)
+        self.T_SL1 = self.T_SLi - self.f_dsh * dTSL
+        self.T_SL2 = self.T_SL1 - self.f_cond * dTSL
+        self.T_SLo = self.T_SL2 - self.f_sc * dTSL
+
+    def define_export_variables(self):
+        self.export_variables = {
+            'mdot_ref': self.mdot_ref,
+            'mdot_SL': self.mdot_SL,
+            'p_ref': self.p,
+            'T_ref_in': self.T_ref_in,
+            'T_SL_in': self.T_SLi,
+            'T_SL_out': self.T_SLo,
+            'fA_desuperheat': self.f_dsh,
+            'fA_condensing': self.f_cond,
+            'fA_subcool': self.f_sc
+        }
+        return
+
+    def model(self, x):
+        # x[0] = self.p
+        # x[1] = self.T_SL1
+        # x[2] = self.T_SL2
+        # x[3] = self.T_SLo
+        # x[4] = self.f_dsh
+        # x[5] = self.f_cond
+        # x[6] = self.f_sc
+
+        # Calculate refrigerant temperatures
+        self.ref_HEOS.update(CoolProp.PQ_INPUTS, x[0], 1)
+        hGas = self.ref_HEOS.hmass()
+
+        self.ref_HEOS.update(CoolProp.PQ_INPUTS, x[0], 0)
+        TC = self.ref_HEOS.T()
+        hliquid = self.ref_HEOS.hmass()
+
+        self.ref_HEOS.update(CoolProp.PT_INPUTS, x[0], TC - self.dTSC)
+        h_R_out = self.ref_HEOS.hmass()
+
+        # Calculate sec. liquid cp
+        cpSL = CPPSI('C', 'T', (self.T_SLi + x[1]) / 2, 'P', 1e5, self.SL)  # heat capacity of secondary liquid
+
+        # Calculate the mean logarithmic temperature value for all three sections of the condenser
+        LMTD_dsh = lmtd_calc(self.T_ref_in, TC, x[2], x[3])
+        LMTD_cond = lmtd_calc(TC, TC, x[1], x[2])
+        LMTD_sc = lmtd_calc(TC, TC - self.dTSC, self.T_SLi, x[1])
+
+        f = np.zeros(7)
+        # desuperheat zone
+        f[0] = self.mdot_ref * (self.h_ref_in - hGas) - self.mdot_SL * cpSL * (x[3] - x[2])
+        f[1] = self.mdot_ref * (self.h_ref_in - hGas) - x[4] * self.k_dsh * self.area * LMTD_dsh
+
+        # condensing zone
+        f[2] = self.mdot_ref * (hGas - hliquid) - self.mdot_SL * cpSL * (x[2] - x[1])
+        f[3] = self.mdot_ref * (hGas - hliquid) - x[5] * self.k_cond * self.area * LMTD_cond
+
+        # subcooling zone
+        f[4] = self.mdot_ref * (hliquid - h_R_out) - self.mdot_SL * cpSL * (x[1] - self.T_SLi)
+        f[5] = self.mdot_ref * (hliquid - h_R_out) - x[6] * self.k_sc * self.area * LMTD_sc
+
+        # Area conservation
+        f[6] = 1 - x[4] - x[5] - x[6]
+
+        return f
+
+    def calc(self):
+        self.update_inlet_interfaces()
+
+        x = np.zeros(7)
+        x[0] = self.p
+        x[1] = self.T_SL1
+        x[2] = self.T_SL2
+        x[3] = self.T_SLo
+        x[4] = self.f_dsh
+        x[5] = self.f_cond
+        x[6] = self.f_sc
+
+        # x = fsolve(self.model, x0=x, xtol=self.system.fun_tol)
+        sol = scipy.optimize.root(self.model, x0=x)
+        x = sol.x
+
+        self.p = x[0]
+        self.T_SL1 = x[1]
+        self.T_SL2 = x[2]
+        self.T_SLo = x[3]
+        self.f_dsh = x[4]
+        self.f_cond = x[5]
+        self.f_sc = x[6]
+
+        self.ref_HEOS.update(CoolProp.PQ_INPUTS, self.p, 0)
+        self.TC = self.ref_HEOS.T()
+
+        if self.dTSC == 0:
+            hout = CPPSI('H', 'P', self.p, 'Q', 0, self.junctions['inlet_A'].medium)
+        else:
+            hout = CPPSI('H', 'P', self.p, 'T', self.TC-self.dTSC, self.junctions['inlet_A'].medium)
+
+        mdot = self.junctions['inlet_A'].get_massflow()
+        hB_out = CPPSI('H', 'T', self.T_SL1, 'P', self.junctions['inlet_B'].get_pressure(), self.junctions['inlet_B'].medium)
+
+        self.junctions['outlet_A'].set_values(p=self.p, h=hout, mdot=mdot)
+        self.junctions['inlet_A'].set_values(p=self.p)
+        self.junctions['outlet_B'].set_values(h=hB_out)
+
+    def update_inlet_interfaces(self):
+        self.mdot_ref = self.junctions['inlet_A'].get_massflow()
+        self.T_ref_in = self.junctions['inlet_A'].get_temperature()
+        self.h_ref_in = self.junctions['inlet_A'].get_enthalpy()
+        self.mdot_SL = self.junctions['inlet_B'].get_massflow()
+        self.T_SLi = self.junctions['inlet_B'].get_temperature()
+
+    def update_parameter(self, param, value):
+        if param == 'k':
+            self.set_k_value(value)
+
+        else:
+            raise ValueError('Cannot set parameter {}'.format(param))
+
+    def set_k_value(self, k):
+        self.k = k
+
+    def get_function_residual(self):
+        x = np.zeros(7)
+        x[0] = self.p
+        x[1] = self.T_SL1
+        x[2] = self.T_SL2
+        x[3] = self.T_SLo
+        x[4] = self.f_dsh
+        x[5] = self.f_cond
+        x[6] = self.f_sc
+
+        res = self.model(x)
+        Qdot = self.junctions['inlet_A'].get_massflow() * (self.junctions['outlet_A'].get_enthalpy() - self.junctions['inlet_A'].get_enthalpy())
+        res[0:6] = res[0:6]/Qdot
+        return res

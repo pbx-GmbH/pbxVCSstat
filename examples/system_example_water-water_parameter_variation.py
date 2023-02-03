@@ -2,15 +2,20 @@ import VCSpbx as vcs
 from CoolProp.CoolProp import PropsSI as CPPSI
 import numpy as np
 import pandas as pd
-
+import pickle
 
 def generate_parameter_list():
-    cpr_range = np.array([1000., 1100., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
+    # FOR DEBUG:
+    cpr_range = np.array([1000., 1100., 1250., 1500.])
+    T_SL_cold_in_range = np.arange(-10, -8, 1) + 273.15
+    T_SL_hot_in_range = np.arange(20, 22, 1) + 273.15
+    parameters = [cpr_range, T_SL_hot_in_range, T_SL_cold_in_range]
 
-    T_SL_hot_in_range = np.arange(20, 50.1, 1) + 273.15
+    # cpr_range = np.array([1000., 1100., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
+    # T_SL_cold_in_range = np.arange(-10, 10, 1) + 273.15
+    # T_SL_hot_in_range = np.arange(20, 50.1, 1) + 273.15
+
     h_SL_hot_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_hot_in_range])
-
-    T_SL_cold_in_range = np.arange(-10, 10, 1) + 273.15
     h_SL_cold_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_cold_in_range])
 
     return_list = list()
@@ -19,27 +24,18 @@ def generate_parameter_list():
         {'component': srchot, 'parameter': 'h', 'value': h_SL_hot_in_range[0]},
         {'component': srccold, 'parameter': 'h', 'value': h_SL_cold_in_range[0]}
     ])
-    skip_flag = False
-    first_iter = True
-    for h_SL_cold in h_SL_cold_in_range:
-        if not first_iter:
-            return_list.append([{'component': srccold, 'parameter': 'h', 'value': h_SL_cold}])
-        for h_SL_hot in h_SL_hot_in_range:
-            if not first_iter:
-                return_list.append([{'component': srchot, 'parameter': 'h', 'value': h_SL_hot}])
-            for cpr_speed in cpr_range:
-                if not first_iter:
-                    return_list.append([{'component': cpr, 'parameter': 'speed', 'value': cpr_speed}])
 
-                if skip_flag:
-                    skip_flag = False
-                    continue
-                first_iter = False
+    for h_SL_cold in h_SL_cold_in_range:
+        return_list.append([{'component': srccold, 'parameter': 'h', 'value': h_SL_cold}])
+        for h_SL_hot in h_SL_hot_in_range:
+            return_list.append([{'component': srchot, 'parameter': 'h', 'value': h_SL_hot}])
+            for cpr_speed in cpr_range:
+                return_list.append([{'component': cpr, 'parameter': 'speed', 'value': cpr_speed}])
             cpr_range = cpr_range[::-1]
-            skip_flag = True
         h_SL_hot_in_range = h_SL_hot_in_range[::-1]
 
-    return return_list
+    return_df = pd.DataFrame(return_list)
+
 
 
 # parameter setting
@@ -66,10 +62,10 @@ mdot_SL_cold = 0.35  # kg/s
 mdot_SL_hot = 0.35  # kg/s
 
 # initial guesses
-mdot_ref_init = .5e-3
+mdot_ref_init = 0.0025
 pc_init = 11e5
 Tc_init = CPPSI('T', 'P', pc_init, 'Q', 0, ref)
-h2_init = CPPSI('H', 'P', pc_init, 'T', 60+273.15, ref)
+h2_init = CPPSI('H', 'P', pc_init, 'T', 70+273.15, ref)
 h3_init = CPPSI('H', 'P', pc_init, 'Q', 0, ref)
 h4_init = CPPSI('H', 'P', pc_init, 'T', Tc_init-2., ref)
 p0_init = 2.9e5
@@ -81,9 +77,9 @@ initial_areafraction_cond = [0.2, 0.6, 0.2]
 initial_areafraction_evap = [0.2, 0.8]
 
 # Instantiate components
-system = vcs.System(id='system', tolerance=1.)
+system = vcs.System(id='system', tolerance=1., fun_tol=1.)
 cpr = vcs.CompressorEfficiency(id='cpr', system=system, etaS=0.645, etaV=0.82, etaEL=0.775, stroke=cpr_stroke, speed=cpr_speed)
-cond = vcs.CondenserBPHE(id='cond', system=system, k=k_cond, area=area_cond, subcooling=0.1, initial_areafractions=initial_areafraction_cond)
+cond = vcs.CondenserBPHENew(id='cond', system=system, k=k_cond, area=area_cond, subcooling=0.1, initial_areafractions=initial_areafraction_cond)
 ihx = vcs.IHX(id='ihx', system=system, UA=2.3)
 evap = vcs.EvaporatorJacob(id='evap', system=system, k=k_evap, area=area_evap, superheat=superheat, boundary_switch=True, limit_temp=True, initial_areafractions=initial_areafraction_evap)
 
@@ -108,9 +104,11 @@ cond_snkhot = vcs.Junction(id='cond_snkhot', system=system, medium=SL, upstream_
 
 system.initialize()
 system.run(full_output=True)
-#
-# cpr.set_speed(1100)
+
+cpr.set_speed(1100)
 # system.run(full_output=True)
 #
 parameter_variation = generate_parameter_list()
 system.parameter_variation(parameters=parameter_variation)
+
+df = pd.DataFrame(system.results_parameter_variation)
