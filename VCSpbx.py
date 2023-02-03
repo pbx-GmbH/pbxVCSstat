@@ -1252,8 +1252,7 @@ class EvaporatorCounterflow(Component):
 
         self.area = area
         self.superheat = superheat
-        self.boundary_switch = boundary_switch
-        self.limit_temp = limit_temp
+
         self.T0 = None
         self.TSL2 = None
         self.TSLmid = None
