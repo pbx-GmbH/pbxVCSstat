@@ -35,13 +35,13 @@ snkair = vcs.Sink(id='snk_air', system=system)
 srcair = vcs.Source(id='src_air', system=system, mdot=mdot_air, p=p_air, h=h_air_in)
 
 # connections
-cpr_cond = vcs.Junction(id='cpr_cond', system=system, medium=ref, upstream_component=cpr, upstream_id='outlet_A', downstream_component=cond, downstream_id='inlet_A', mdot_init=mdot_ref_init, p_init=pc_init, h_init=h2_init)
-cond_ihx = vcs.Junction(id='cond_ihx', system=system, medium=ref, upstream_component=cond, upstream_id='outlet_A', downstream_component=ihx, downstream_id='inlet_A', mdot_init= mdot_ref_init, p_init=pc_init, h_init=h3_init)
-ihx_evap = vcs.Junction(id='ihx_evap', system=system, medium=ref, upstream_component=ihx, upstream_id='outlet_A', downstream_component=evap, downstream_id='inlet_A', mdot_init= mdot_ref_init, p_init=p0_init, h_init=h4_init)
-evap_ihx = vcs.Junction(id='evap_ihx', system=system, medium=ref, upstream_component=evap, upstream_id='outlet_A', downstream_component=ihx, downstream_id='inlet_B', mdot_init=mdot_ref_init, p_init=p0_init, h_init=h5_init)
-ihx_cpr = vcs.Junction(id='ihx_cpr', system=system, medium=ref, upstream_component=ihx, upstream_id='outlet_B', downstream_component=cpr, downstream_id='inlet_A', mdot_init=mdot_ref_init, p_init=p0_init, h_init=h1_init)
-srcair_evap = vcs.Junction(id='srcair_evap', system=system, medium=air, upstream_component=srcair, upstream_id='outlet_A', downstream_component=evap, downstream_id='inlet_B', mdot_init=mdot_air, p_init=p_air, h_init=h_air_in)
-evap_snkair = vcs.Junction(id='evap_snkair', system=system, medium=air, upstream_component=evap, upstream_id='outlet_B', downstream_component=snkair, downstream_id='inlet_A', mdot_init=mdot_air, p_init=p_air, h_init=h_air_in)
+cpr_cond = vcs.Junction(id='cpr_cond', system=system, medium=ref, upstream_component=cpr, upstream_port_id='outlet_A', downstream_component=cond, downstream_port_id='inlet_A', mdot_init=mdot_ref_init, p_init=pc_init, h_init=h2_init)
+cond_ihx = vcs.Junction(id='cond_ihx', system=system, medium=ref, upstream_component=cond, upstream_port_id='outlet_A', downstream_component=ihx, downstream_port_id='inlet_A', mdot_init= mdot_ref_init, p_init=pc_init, h_init=h3_init)
+ihx_evap = vcs.Junction(id='ihx_evap', system=system, medium=ref, upstream_component=ihx, upstream_port_id='outlet_A', downstream_component=evap, downstream_port_id='inlet_A', mdot_init= mdot_ref_init, p_init=p0_init, h_init=h4_init)
+evap_ihx = vcs.Junction(id='evap_ihx', system=system, medium=ref, upstream_component=evap, upstream_port_id='outlet_A', downstream_component=ihx, downstream_port_id='inlet_B', mdot_init=mdot_ref_init, p_init=p0_init, h_init=h5_init)
+ihx_cpr = vcs.Junction(id='ihx_cpr', system=system, medium=ref, upstream_component=ihx, upstream_port_id='outlet_B', downstream_component=cpr, downstream_port_id='inlet_A', mdot_init=mdot_ref_init, p_init=p0_init, h_init=h1_init)
+srcair_evap = vcs.Junction(id='srcair_evap', system=system, medium=air, upstream_component=srcair, upstream_port_id='outlet_A', downstream_component=evap, downstream_port_id='inlet_B', mdot_init=mdot_air, p_init=p_air, h_init=h_air_in)
+evap_snkair = vcs.Junction(id='evap_snkair', system=system, medium=air, upstream_component=evap, upstream_port_id='outlet_B', downstream_component=snkair, downstream_port_id='inlet_A', mdot_init=mdot_air, p_init=p_air, h_init=h_air_in)
 
 system.run(full_output=True)
 

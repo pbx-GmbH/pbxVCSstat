@@ -1,5 +1,7 @@
 import numpy as np
+import scipy.optimize
 from scipy.optimize import fsolve
+import CoolProp
 from CoolProp.CoolProp import PropsSI as CPPSI
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -7,12 +9,21 @@ from imageio import imread
 
 
 def lmtd_calc(Thi, Tho, Tci, Tco):
+    """
+    Calculate the mean logarithmic temperature difference. Used for calculating heat flow.
+
+    :param Thi: Inlet temperature of hot medium
+    :param Tho: Outlet temperature of hot medium
+    :param Tci: Inlet temperature of cold medium
+    :param Tco: Outlet temperature of cold medium
+    :return: Mean logarithmic temperature difference
+    """
     # calculating the logaritmic mean temperature of two fluids with defined "hot" and "cold" fluid
     dT1 = Thi - Tco
     dT2 = Tho - Tci
     if dT2 == 0:
         dT2 = 0.01
-    if dT1 == dT2:
+    if np.abs(dT1-dT2) < 0.1:
         LMTD = dT1
     else:
         LMTD = (dT1 - dT2) / np.log(dT1 / dT2)
@@ -25,6 +36,13 @@ def lmtd_calc(Thi, Tho, Tci, Tco):
 
 
 def dh_cond(TC, medium):
+    """
+    Calculate the enthalpy difference of condensation
+
+    :param TC: Temperature of condensation
+    :param medium: Medium (CoolProp string)
+    :return: Enthalpy of condensation
+    """
     Tcrit = CPPSI('TCRIT', medium)
     if TC > Tcrit:
         dh = -(TC - Tcrit) * 1000
@@ -34,7 +52,19 @@ def dh_cond(TC, medium):
 
 
 class System:
+    """
+    The system class comprises all components and connections, that are needed to calculate the model.
+    It handles also the simulation itself.
+    """
     def __init__(self, id: str, tolerance: float, n_max: int = 100, fun_tol: float = 0.1):
+        """
+        Initializes the class System
+
+        :param id: the name of the system to later refer to it
+        :param tolerance: tolerance used for the enthalpy differences at the connection points (convergence criteria)
+        :param n_max: maximum number of iterations
+        :param fun_tol: tolerance used for the calculation of the component models
+        """
         self.id = id
         self.components = []
         self.junctions = []
@@ -47,9 +77,15 @@ class System:
         self.residual_enthalpy = None
         self.residual_functions = {}
 
+        self.residual_dict = {}
+
     def run(self, full_output=False):
-        # initialize the system and all components
-        # self.initialize()
+        """
+        Runs the calculation of the class System with the given parameters. This can only be done after initialization.
+
+        :param full_output: Declare whether to generate a full output
+        :return: True if simulation was successful, False if not
+        """
         # first get the current enthalpy values
         old_enthalpies = self.get_junction_enthalpies()
         counter = 0
@@ -62,28 +98,34 @@ class System:
             # calculate the delta
             abs_delta = np.abs(old_enthalpies - new_enthalpies)
 
+            for i, junc in enumerate(self.junctions):
+                self.residual_dict[junc.id] = abs_delta[i]
+
             # get the residual of the functions
             fun_residual = np.array([])
             for comp in self.components:
                 res = np.array(comp.get_function_residual())
                 fun_residual = np.append(fun_residual, np.abs(res))
+                for i, fr in enumerate(res):
+                    key = '{}.{}'.format(comp.id, i)
+                    self.residual_dict[key] = fr
 
             # check if delta is lower than tolerance
             if np.max(abs_delta) < self.tolerance and np.max(fun_residual) < self.fun_tol:
                 break
             counter += 1
+            if counter >= 10:
+                a = 0
             if counter > self.n_max:
                 print('Reached {} iterations without solution'.format(counter))
                 for comp in self.components:
                     self.residual_functions[comp.id] = comp.get_function_residual()
                 self.residual_enthalpy = abs_delta
+                print('Residual enthalpies: {}'.format(abs_delta))
+                print('Function residual: {}'.format(fun_residual))
                 return False
 
             old_enthalpies = new_enthalpies.copy()
-        # Helper
-        #     for junc in self.junctions:
-                # print([junc.id, junc.T, junc.h])
-            # print('--')
 
         self.residual_enthalpy = abs_delta
 
@@ -93,7 +135,8 @@ class System:
         if full_output:
             print('---')
             print('Iteration finished after {} iterations'.format(counter))
-            print('Residual enthalpies difference: {}'.format(abs_delta))
+            print('---\nResidual enthalpies difference:')
+            [print('{}: {}'.format(key, self.residual_dict[key])) for key in self.residual_dict]
             print('---\nJUNCTIONS:')
             for junc in self.junctions:
                 print(junc.id)
@@ -106,23 +149,57 @@ class System:
         return True
 
     def initialize(self):
+        """
+        Initialize the components of the system.
+        Loops through all components and executes the components methods "check_junctions()" and "initialize()"
+
+        :return:
+        """
         for comp in self.components:
             comp.check_junctions()
             comp.initialize()
 
     def update_parameters(self):
+        """
+        Dummy class to update parameters.
+
+        :return:
+        """
         pass
 
     def add_component(self, comp):
+        """
+        Add a component to the system. This is done by adding the component object to the list of components.
+
+        :param comp: component object
+        :return:
+        """
         self.components.append(comp)
 
     def add_junction(self, junc):
+        """
+        Add a junction to the system. This is done by adding the junction object to the list of junctions.
+
+        :param junc:
+        :return:
+        """
         self.junctions.append(junc)
 
     def get_junction_enthalpies(self):
+        """
+
+        :return:
+        """
         return np.array([junc.get_enthalpy() for junc in self.junctions])
 
-    def plot_cycle(self, dict: dict, cycle_img_path: str):
+    def plot_cycle(self, plot_dict: dict, cycle_img_path: str):
+        """
+        Plot the cylce on a given image. The position and values of the plottet text have to be parsed through the plot_dict.
+
+        :param plot_dict: Dictionary that defines the position of the text fields
+        :param cycle_img_path: Path to the image
+        :return:
+        """
         # TODO check if cycle image is a file
 
         # initiate the subplots
@@ -135,37 +212,55 @@ class System:
 
         # now run through dict and write the texts into the drawing
         # first the junctions
-        for junc in dict['cycle']['junctions']:
-            comp = dict['cycle']['junctions'][junc]
+        for junc in plot_dict['cycle']['junctions']:
+            comp = plot_dict['cycle']['junctions'][junc]
             # retrieve plot string from component
             text = comp['component'].get_plot_string()
             # plot the text
             plt.text(comp['position'][0], comp['position'][1], text, va=comp['va'], ha=comp['ha'], fontsize=8)
 
         # now the special text
-        for special in dict['cycle']['special']:
-            comp = dict['cycle']['special'][special]
+        for special in plot_dict['cycle']['special']:
+            comp = plot_dict['cycle']['special'][special]
             plt.text(comp['position'][0], comp['position'][1], comp['text'], va=comp['va'], ha=comp['ha'], fontsize=8)
 
         # create the top right side (Ts-diagram)
         plt.subplot(222)
 
     def get_export_variables(self):
+        """
+        Get the export variables of all components by calling the
+        respective "dump_export_variables()" method of every component.
+
+        :return: dict with all export variables
+        """
         dump_dict = dict()
         for comp in self.components:
             dump_dict.update(comp.dump_export_variables())
 
         return dump_dict
 
-    def parameter_variation(self, parameters):
-        self.results_parameter_variation = list()
-        for params in tqdm(parameters):
-            for param in params:
-                comp = param['component']
-                p = param['parameter']
-                value = param['value']
+    def parameter_variation(self, parameters: iter, parameter_handles: iter, function_tolerance: float = 0.1, enthalpy_tolerance: float = 1.):
+        """
+        THIS IS STILL UNDER DEVELOPMENT!
+        Calculate a parameter variation field. Parameters have to be parsed with their object handle functions.
 
-                comp.update_parameter(p, value)
+        :param parameters: Nested list of parameters
+        :param parameter_handles: List of objects
+        :param function_tolerance: Tolerance for solving the component models.
+        :param enthalpy_tolerance: Tolerance for the enthalpy differences of junctions.
+        :return:
+        """
+        self.results_parameter_variation = list()
+
+        self.tolerance = enthalpy_tolerance
+        self.fun_tol = function_tolerance
+
+        for params in tqdm(parameters):
+
+            # update the parameters
+            for i, p in tqdm(params):
+                parameter_handles[i](p)
 
             res_dict = dict()
             try:
@@ -178,8 +273,20 @@ class System:
             self.results_parameter_variation.append(res_dict)
 
 
+
+
+
 class Component:
+    """
+    Base class of Components. It contains all functions, that are needed for the System Class to run but with dummy outputs.
+    """
     def __init__(self, id: str, system: object):
+        """
+        Initialize the Component class.
+
+        :param id: The name of the component to later refer to.
+        :param system: The System object that shall contain the Component object.
+        """
         self.system = system
         system.add_component(self)
 
@@ -194,30 +301,74 @@ class Component:
         self.export_variables = dict()
 
     def print_parameters(self):
+        """
+        Print the parameters of the component.
+
+        :return:
+        """
         print(self.parameters)
 
     def calc(self):
+        """
+        Dummy function for Component. This function has to be overwritten in the specific component class.
+
+        :return:
+        """
         print('{} has no defined calc() function!'.format(self.id))
 
     def check_junctions(self):
+        """
+        Check if the component has a junction connected to every port.
+
+        :return:
+        """
         for key in self.junctions:
             if not self.junctions[key]:
                 raise ValueError('{} has no junction at port {}.'.format(self.id, key))
 
     def get_function_residual(self):
-        return 0.0
+        """
+        Dummy function to return the function residual. If a component has a function residual, this function has
+        to be overwritten in the component class.
+
+        :return:
+        """
+        return [0.0]
 
     def get_Ts_data(self, npoints: int):
+        """
+        Dummy function for Component. This function has to be overwritten in the specific component class.
+
+        :param npoints: Define the number of points on the Ts diagram
+        :return:
+        """
         pass
 
     def get_ph_data(self, npoints: int):
+        """
+        Dummy function for Component. This function has to be overwritten in the specific component class.
+
+        :param npoints: Define the number of points on the ph diagram
+        :return:
+        """
         pass
 
     def define_export_variables(self):
+        """
+        Dummy function for Component. This function has to be overwritten in the specific component class.
+
+        :return:
+        """
         print('{} has no export_variables defined.'.format(self.id))
         return
 
     def dump_export_variables(self):
+        """
+        Return the values of the export variables as a dictionary. The key of the dictionary is generated the following way:
+        <self.id>.<variable_key>
+
+        :return: The dictionary with all export variables.
+        """
         self.define_export_variables()
         dump_dict = {}
         for var_key in self.export_variables:
@@ -225,25 +376,70 @@ class Component:
             dump_dict[key] = self.export_variables[var_key]
         return dump_dict
 
+    def initialize(self):
+        """
+        Dummy function for Component. This function can be overwritten in the specific component class, if initialization is needed.
+
+        :return:
+        """
+        pass
 
 class Junction:
-    def __init__(self, id: str, system: object, medium: str, upstream_component:object, upstream_id: str, downstream_component: object, downstream_id: str, mdot_init: float, p_init: float, h_init: float):
+    """
+    Class that defines the junctions between components. Junctions can be viewed as "high-fidelity" data storages
+    and work as the communication interface between the components.
+    Junction also are used to define the initial guesses.
+    Junction have three defining parameters: massflow, pressure, enthalpy. All other parameters are calculated from these.
+    """
+    def __init__(self, id: str, system: object, medium: str, upstream_component: object, upstream_port_id: str,
+                 downstream_component: object, downstream_port_id: str, mdot_init: float, p_init: float, h_init: float):
+        """
+        Initialize the junction.
+
+        :param id: The name of the junction to later refer to it.
+        :param system: The system that shall contain the junction.
+        :param medium: The medium of the junction.
+        :param upstream_component: The component object that is upstream of the junction.
+        :param upstream_port_id: The port id of the upstream component. This is a string.
+        :param downstream_component: The component object that is downstream of the junction.
+        :param downstream_port_id: The port id of the downstream component. This is a string.
+        :param mdot_init: Initial guess of massflow.
+        :param p_init: Initial guess of pressure.
+        :param h_init: Initial guess of enthalpy.
+        """
         self.medium = medium
 
         self.id = id
         self.system = system
         system.add_junction(self)
 
+        self.mdot = None
+        self.p = None
+        self.h = None
+        self.T = None
+        self.x = None
+
         self.set_values(mdot_init, p_init, h_init)
 
-        if upstream_component.junctions[upstream_id]:
-            print('{} of component {} overwritten!'.format(upstream_id, upstream_component.id))
-        upstream_component.junctions[upstream_id] = self
-        if downstream_component.junctions[downstream_id]:
-            print('{} of component {} overwritten!'.format(downstream_id, downstream_component.id))
-        downstream_component.junctions[downstream_id] = self
+        if upstream_component.junctions[upstream_port_id]:
+            print('{} of component {} overwritten!'.format(upstream_port_id, upstream_component.id))
+        upstream_component.junctions[upstream_port_id] = self
+        if downstream_component.junctions[downstream_port_id]:
+            print('{} of component {} overwritten!'.format(downstream_port_id, downstream_component.id))
+        downstream_component.junctions[downstream_port_id] = self
+
 
     def set_values(self, mdot: float = None, p:float = None, h: float = None):
+        """
+        Set the value of the junction by giving either one, two or all of the three defining parameters massflow, pressure, enthalpy.
+        The function calculates the values for all other parameters and stores it in self.
+
+        :param mdot: New value for massflow.
+        :param p: New value for pressure.
+        :param h: New value for enthalpy.
+        :return:
+        """
+
         if mdot:
             self.mdot = mdot
         if p:
@@ -261,30 +457,73 @@ class Junction:
             self.x = None
 
     def get_pressure(self):
+        """
+        Return the pressure of the junction.
+
+        :return: Pressure
+        """
         return self.p
 
     def get_temperature(self):
+        """
+        Return the temperature of the junction.
+
+        :return: Temperature
+        """
         return self.T
 
     def get_massflow(self):
+        """
+        Return the mass flow of the junction.
+
+        :return: Mass flow
+        """
         return self.mdot
 
     def get_enthalpy(self):
+        """
+        Return the enthalpy of the junction.
+
+        :return: Enthalpy
+        """
         return self.h
 
     def get_entropy(self):
+        """
+        Return the entropy of the junction.
+
+        :return: Entropy
+        """
         return self.s
 
     def get_quality(self):
+        """
+        Return the vapor quality of the junction.
+
+        :return: Quality
+        """
         return self.x
 
     def calculate_x(self):
+        """
+        Calculate the quality of the refrigerant. The used definition allows values below 0 and above 1 (contrary to literature).
+        The definition is:
+        h-h'/(h''-h')
+        The calculation is not limited to two phase region of the refrigerant, i.e. values below zero indicate subcooled liquid, values above 1 indicate superheated gas.
+
+        :return:
+        """
         # this defines h for more than just the two phase region
         h_l = CPPSI('H', 'P', self.p, 'Q', 0, self.medium)
         h_v = CPPSI('H', 'P', self.p, 'Q', 1, self.medium)
         return (self.h - h_l)/(h_v-h_l)
 
     def get_plot_string(self):
+        """
+        Return the string used to plot with the "plot_cycle()" function of class System.
+
+        :return: text string, that contains the relevant information (T, p, h, mdot).
+        """
         text = 'T: {T:.2f} °C\np: {p:.2f} bar\nh: {h:.0f} J/kg\nmdot: {mdot:.2f} g/s'.format(
             T=self.get_temperature() - 273.15,
             p=self.get_pressure() * 1e-5,
@@ -294,7 +533,21 @@ class Junction:
 
 
 class CompressorEfficiency(Component):
+    """
+    Compressor model based on isentropic and volumetric efficiency. Also a parameter for electric efficiency is added.
+    """
     def __init__(self, id: str, system: object, etaS: float, etaV:float, stroke: float, speed: float, etaEL:float = 1.):
+        """
+        Initialize the compressor object.
+
+        :param id: name of the comporessor object
+        :param system: System object, that shall contain the compressor object.
+        :param etaS: Isentropic efficiency
+        :param etaV: Volumetric efficiency
+        :param stroke: Stroke of comporessor
+        :param speed: Speed of compressor
+        :param etaEL: Electric efficiency
+        """
         super().__init__(id, system)
         self.etaS = etaS
         self.etaV = etaV
@@ -311,10 +564,13 @@ class CompressorEfficiency(Component):
         self.Pel = None
         self.P_compression = None
 
-    def initialize(self):
-        pass
-
     def calc(self):
+        """
+        Calculates the compressor model. With the pressures at inlet and outlet and the temperature of the inlet,
+        the model calculates the outlet enthalpy and updates the outlet junction accordingly.
+
+        :return:
+        """
         self.Tin = self.junctions['inlet_A'].get_temperature()
         self.pin = self.junctions['inlet_A'].get_pressure()
         self.pout = self.junctions['outlet_A'].get_pressure()
@@ -334,12 +590,29 @@ class CompressorEfficiency(Component):
         self.junctions['outlet_A'].set_values(mdot=mdot, h=hout)
 
     def set_speed(self, speed):
+        """
+        Set the speed of the compressor.
+
+        :param speed: Speed of compressor [rpm]
+        :return:
+        """
         self.speed = speed
 
     def get_power(self):
+        """
+        Return the elecrtical power consumption of the compressor.
+
+        :return: Electrical power consumption
+        """
         return self.Pel
 
     def get_Ts_data(self, npoints: int):
+        """
+        Return data for Ts-diagrams.
+
+        :param npoints: Define the number of points on the Ts diagram
+        :return: Array with temperature and entropy [T, s]
+        """
         T, s = np.zeros((2, npoints))
         Tin = self.junctions['inlet_A'].get_temperature()
         Tout = self.junctions['outlet_A'].get_temperature()
@@ -349,6 +622,12 @@ class CompressorEfficiency(Component):
         return [T, s]
 
     def get_ph_data(self, npoints: int):
+        """
+        Return data for ph-diagrams.
+
+        :param npoints: Define the number of points on the Ts diagram
+        :return: Array with temperature and entropy [T, s]
+        """
         pin = self.junctions['inlet_A'].get_pressure()
         pout = self.junctions['outlet_A'].get_pressure()
         hin = self.junctions['inlet_A'].get_enthalpy()
@@ -358,6 +637,13 @@ class CompressorEfficiency(Component):
         return [p, h]
 
     def update_parameter(self, param, value):
+        """
+        Function to update a parameter with a string and value.
+
+        :param param: string of the parameter to be changed.
+        :param value: new value of the parameter
+        :return:
+        """
         if param == 'speed':
             self.set_speed(value)
 
@@ -365,13 +651,22 @@ class CompressorEfficiency(Component):
             raise ValueError('Cannot set parameter {}'.format(param))
 
     def define_export_variables(self):
+        """
+        Define which variables are to be exported.
+
+        :return:
+        """
         self.export_variables = {
             'speed': self.speed,
+            'Pel': self.Pel
         }
         return
 
 
 class Condenser(Component):
+    """
+    Condenser model with air. This is deprecated.
+    """
     def __init__(self, id: str, system: object, k: iter, area: float, subcooling: float, T_air_in: float, mdot_air_in: float):
         super().__init__(id, system)
         if len(k) != 3:
@@ -515,25 +810,41 @@ class Condenser(Component):
         h = np.linspace()
 
 
-class CondenserBPHE(Component):
+class CondenserCounterflow(Component):
+    """
+    Condenser model for counter flow characteristic.
+    The model is based on a three zone condeser model. (Desuperheating, Condensing, Subcooling)
+    """
     def __init__(self, id: str, system: object, k: iter, area: float, subcooling: float, initial_areafractions: iter = None):
+        """
+        Initialize the condenser model.
+
+        :param id: Name of the condenser object.
+        :param system: System object, that shall contain the condenser object.
+        :param k: Array of heat transfer coefficients. [k_dsh, k_cond, k_sc]
+        :param area: Heat transfer area of the condenser
+        :param subcooling: Subcooling temperature difference at the outlet.
+        :param initial_areafractions: Initial guess for area fraction.
+        """
         super().__init__(id, system)
         if len(k) != 3:
             raise ValueError('k must be of length 3, but len(k) = {}'.format(len(k)))
         else:
-            self.k = k
+            self.k_dsh = k[0]
+            self.k_cond = k[1]
+            self.k_sc = k[2]
         self.area = area
         self.dTSC = subcooling
         # self.parameters = {'UA': self.UA, 'subcooling': self.dTSC}
 
 
         self.TC = None
-        self.TAo_desuperheat = None
-        self.TAo_condenser = None
-        self.TAo_subcool = None
-        self.areafraction_desuperheat = None
-        self.areafraction_condenser = None
-        self.areafraction_subcool = None
+        self.T_SL1 = None
+        self.T_SL2 = None
+        self.T_SLo = None
+        self.f_dsh = None
+        self.f_cond = None
+        self.f_sc = None
         self.p = None
 
         self.junctions['inlet_B'] = None
@@ -542,135 +853,173 @@ class CondenserBPHE(Component):
         if initial_areafractions:
             if len(initial_areafractions) != 3:
                 raise ValueError('initial_areafractions must be of len 3')
-
-            self.areafraction_desuperheat = initial_areafractions[0]
-            self.areafraction_condenser = initial_areafractions[1]
-            self.areafraction_subcool = initial_areafractions[2]
+            self.f_dsh = initial_areafractions[0]
+            self.f_cond = initial_areafractions[1]
+            self.f_sc = initial_areafractions[2]
         else:
-            self.areafraction_desuperheat = 0.1
-            self.areafraction_condenser = 0.8
-            self.areafraction_subcool = 0.1
+            self.f_dsh = 0.1
+            self.f_cond = 0.8
+            self.f_sc = 0.1
 
     def initialize(self):
-        self.ref_string = self.junctions['inlet_A'].medium
-        self.SL_string = self.junctions['inlet_B'].medium
+        """
+        Run further initialization. These tasks cannot be done in __init__(), because there have to be junctions added to the component.
+
+        :return:
+        """
+        self.update_inlet_interfaces()
+        self.ref = self.junctions['inlet_A'].medium
+        self.ref_HEOS = CoolProp.AbstractState('HEOS', self.ref)
+        self.SL = self.junctions['inlet_B'].medium
+
         self.p = self.junctions['inlet_A'].get_pressure()
-        self.TC = CPPSI('T', 'P', self.p, 'Q', 0, self.ref_string)
-        T_sec_in = self.junctions['inlet_B'].get_temperature()
-        Tmean = (T_sec_in + self.TC) / 2
-        self.TAo_desuperheat = Tmean
-        self.TAo_condenser = Tmean
-        self.TAo_subcool = Tmean
+        self.ref_HEOS.update(CoolProp.PQ_INPUTS, self.p, 0)
+        self.TC = self.ref_HEOS.T()
+        h_liquid = self.ref_HEOS.hmass()
+        QC = self.mdot_ref * (self.h_ref_in - h_liquid)
+        cpSL = CPPSI('C', 'T', self.T_SLi, 'P', 1e5, self.SL)  # heat capacity of secondary liquid
+        dTSL = QC/(self.mdot_SL * cpSL)
+        self.T_SL1 = self.T_SLi - self.f_dsh * dTSL
+        self.T_SL2 = self.T_SL1 - self.f_cond * dTSL
+        self.T_SLo = self.T_SL2 - self.f_sc * dTSL
 
     def define_export_variables(self):
+        """
+        Define which variables are to be exported.
+
+        :return:
+        """
         self.export_variables = {
             'mdot_ref': self.mdot_ref,
             'mdot_SL': self.mdot_SL,
             'p_ref': self.p,
             'T_ref_in': self.T_ref_in,
-            'T_SL_in': self.T_SL_in,
-            'T_SL_out': self.TAo_subcool,
-            'fA_desuperheat': self.areafraction_desuperheat,
-            'fA_condensing': self.areafraction_condenser,
-            'fA_subcool': self.areafraction_subcool
+            'T_SL_in': self.T_SLi,
+            'T_SL_out': self.T_SLo,
+            'fA_desuperheat': self.f_dsh,
+            'fA_condensing': self.f_cond,
+            'fA_subcool': self.f_sc
         }
         return
 
     def model(self, x):
-        mdot_ref = self.mdot_ref
-        Tref_in = self.T_ref_in
-        mdot_SL = self.mdot_SL
-        TSL_in = self.T_SL_in
+        """
+        The model class, that is used to run the root determination algorithm in "calc()".\n
+        The variables are:\n
+        x[0] = self.p \n
+        x[1] = self.T_SL1 \n
+        x[2] = self.T_SL2 \n
+        x[3] = self.T_SLo \n
+        x[4] = self.f_dsh \n
+        x[5] = self.f_cond \n
+        x[6] = self.f_sc
 
-        TC = x[0]
-        TSL_out = x[1]
-        TSL_1 = x[2]
-        TSL_2 = x[3]
-        f_dsh = x[4]
-        f_cond = x[5]
-        f_sc = x[6]
+        :param x: Array of free variables.
+        :return: The result of the equation system.
+        """
 
-        # Boundary for fsolve calculation to not cause the logaritmic mean temperature to generate NaN values (neg. logarithm):
-        # The outlet air temperature of the superheat section must not exceed the refrigerant inlet temperature.
-        # if x[1] > TRin:
-        #     x[1] = TRin - 1e-4
-        # if x[0] - self.dTSC < T_sec_in :
-        #     x[0] = T_sec_in + self.dTSC + 1e-4
+        # Calculate refrigerant temperatures
+        self.ref_HEOS.update(CoolProp.PQ_INPUTS, x[0], 1)
+        hGas = self.ref_HEOS.hmass()
 
-        # calculate material parameters
-        cpR_gas = CPPSI("C", "T", TC, "Q", 1, self.ref_string)
-        cpR_liq = CPPSI("C", "T", TC, "Q", 0, self.ref_string)
-        cpSL = CPPSI("C", "T", TSL_in, "P", 1.0e5, self.SL_string)
+        self.ref_HEOS.update(CoolProp.PQ_INPUTS, x[0], 0)
+        TC = self.ref_HEOS.T()
+        hliquid = self.ref_HEOS.hmass()
+
+        self.ref_HEOS.update(CoolProp.PT_INPUTS, x[0], TC - self.dTSC)
+        h_R_out = self.ref_HEOS.hmass()
+
+        # Calculate sec. liquid cp
+        cpSL = CPPSI('C', 'T', (self.T_SLi + x[1]) / 2, 'P', 1e5, self.SL)  # heat capacity of secondary liquid
 
         # Calculate the mean logarithmic temperature value for all three sections of the condenser
-        LMTD = np.zeros(3)
-        LMTD[0] = lmtd_calc(Tref_in, TC, TSL_out, TSL_1)
-        LMTD[1] = lmtd_calc(TC, TC, TSL_1, TSL_2)
-        LMTD[2] = lmtd_calc(TC, TC - self.dTSC, TSL_2, TSL_in)
+        LMTD_dsh = lmtd_calc(self.T_ref_in, TC, x[2], x[3])
+        LMTD_cond = lmtd_calc(TC, TC, x[1], x[2])
+        LMTD_sc = lmtd_calc(TC, TC - self.dTSC, self.T_SLi, x[1])
 
-        # Formulation of the equation system as according to fsolve documentation ( 0 = ... ).
-        # The equation set  and model definition is documented in the model description.
-        dh = CPPSI('H', 'T', TC, 'Q', 1, self.ref_string) - CPPSI('H', 'T', TC, 'Q', 0, self.ref_string)
         f = np.zeros(7)
-        f[0] = mdot_ref * cpR_gas * (Tref_in - TC) - mdot_SL * cpSL * (TSL_out - TSL_1)
-        f[1] = mdot_ref * cpR_gas * (Tref_in - TC) - self.k[0] * f_dsh * self.area * LMTD[0]
-        f[2] = mdot_ref * dh - mdot_SL * cpSL * (TSL_1 - TSL_2)
-        f[3] = mdot_ref * dh - self.k[1] * f_cond * self.area * LMTD[1]
-        f[4] = mdot_ref * cpR_liq * self.dTSC - mdot_SL * cpSL * (TSL_2 - TSL_in)
-        f[5] = mdot_ref * cpR_liq * self.dTSC - self.k[2] * f_sc * LMTD[2]
-        f[6] = 1 - f_dsh - f_cond - f_sc
+        # desuperheat zone
+        f[0] = self.mdot_ref * (self.h_ref_in - hGas) - self.mdot_SL * cpSL * (x[3] - x[2])
+        f[1] = self.mdot_ref * (self.h_ref_in - hGas) - x[4] * self.k_dsh * self.area * LMTD_dsh
 
-        x[0] = TC
-        x[1] = TSL_out
-        x[2] = TSL_1
-        x[3] = TSL_2
-        x[4] = f_dsh
-        x[5] = f_cond
-        x[6] = f_sc
+        # condensing zone
+        f[2] = self.mdot_ref * (hGas - hliquid) - self.mdot_SL * cpSL * (x[2] - x[1])
+        f[3] = self.mdot_ref * (hGas - hliquid) - x[5] * self.k_cond * self.area * LMTD_cond
+
+        # subcooling zone
+        f[4] = self.mdot_ref * (hliquid - h_R_out) - self.mdot_SL * cpSL * (x[1] - self.T_SLi)
+        f[5] = self.mdot_ref * (hliquid - h_R_out) - x[6] * self.k_sc * self.area * LMTD_sc
+
+        # Area conservation
+        f[6] = 1 - x[4] - x[5] - x[6]
 
         return f
 
     def calc(self):
+        """
+        Calculates the condenser model. With the defined "model" function, it runs a scipy.optimize.root algorithm
+        to determine the roots of the equation system.
+        The result of the root finding is stored and the junctions are updated.
+
+        :return:
+        """
         self.update_inlet_interfaces()
+
         x = np.zeros(7)
-        x[0] = self.TC
-        x[1] = self.TAo_desuperheat
-        x[2] = self.TAo_condenser
-        x[3] = self.TAo_subcool
-        x[4] = self.areafraction_desuperheat
-        x[5] = self.areafraction_condenser
-        x[6] = self.areafraction_subcool
+        x[0] = self.p
+        x[1] = self.T_SL1
+        x[2] = self.T_SL2
+        x[3] = self.T_SLo
+        x[4] = self.f_dsh
+        x[5] = self.f_cond
+        x[6] = self.f_sc
 
-        x = fsolve(self.model, x0=x, xtol=self.system.fun_tol)
+        sol = scipy.optimize.root(self.model, x0=x)
+        x = sol.x
 
-        self.TC = x[0]
-        self.TAo_desuperheat = x[1]
-        self.TAo_condenser = x[2]
-        self.TAo_subcool = x[3]
-        self.areafraction_desuperheat = x[4]
-        self.areafraction_condenser = x[5]
-        self.areafraction_subcool = x[6]
+        self.p = x[0]
+        self.T_SL1 = x[1]
+        self.T_SL2 = x[2]
+        self.T_SLo = x[3]
+        self.f_dsh = x[4]
+        self.f_cond = x[5]
+        self.f_sc = x[6]
 
-        self.p = CPPSI('P', 'T', self.TC, 'Q', 0, self.junctions['inlet_A'].medium)
+        self.ref_HEOS.update(CoolProp.PQ_INPUTS, self.p, 0)
+        self.TC = self.ref_HEOS.T()
 
         if self.dTSC == 0:
             hout = CPPSI('H', 'P', self.p, 'Q', 0, self.junctions['inlet_A'].medium)
         else:
             hout = CPPSI('H', 'P', self.p, 'T', self.TC-self.dTSC, self.junctions['inlet_A'].medium)
+
         mdot = self.junctions['inlet_A'].get_massflow()
-        hB_out = CPPSI('H', 'T', self.TAo_desuperheat, 'P', self.junctions['inlet_B'].get_pressure(), self.junctions['inlet_B'].medium)
+        hB_out = CPPSI('H', 'T', self.T_SL1, 'P', self.junctions['inlet_B'].get_pressure(), self.junctions['inlet_B'].medium)
 
         self.junctions['outlet_A'].set_values(p=self.p, h=hout, mdot=mdot)
         self.junctions['inlet_A'].set_values(p=self.p)
         self.junctions['outlet_B'].set_values(h=hB_out)
 
     def update_inlet_interfaces(self):
+        """
+        Update the inlet interfaces by reading the parameters of the inlet junctions.
+
+        :return:
+        """
         self.mdot_ref = self.junctions['inlet_A'].get_massflow()
         self.T_ref_in = self.junctions['inlet_A'].get_temperature()
+        self.h_ref_in = self.junctions['inlet_A'].get_enthalpy()
         self.mdot_SL = self.junctions['inlet_B'].get_massflow()
-        self.T_SL_in = self.junctions['inlet_B'].get_temperature()
+        self.T_SLi = self.junctions['inlet_B'].get_temperature()
 
     def update_parameter(self, param, value):
+        """
+        Function to update a parameter with a string and value.
+
+        :param param: string of the parameter to be changed.
+        :param value: new value of the parameter
+        :return:
+        """
         if param == 'k':
             self.set_k_value(value)
 
@@ -678,10 +1027,44 @@ class CondenserBPHE(Component):
             raise ValueError('Cannot set parameter {}'.format(param))
 
     def set_k_value(self, k):
-        self.k = k
+        """
+        Set the heat transfer coefficients.
+
+        :param k: Array of heat transfer coefficients. [k_dsh, k_cond, k_sc]
+        :return:
+        """
+        if len(k) != 3:
+            raise ValueError('k must be of length 3, but len(k) = {}'.format(len(k)))
+        else:
+            self.k_dsh = k[0]
+            self.k_cond = k[1]
+            self.k_sc = k[2]
+
+    def get_function_residual(self):
+        """
+        Return the function residuals of the root finding algorithm by running the model function with the results of the root finding
+
+        :return: Array of function residuals.
+        """
+        x = np.zeros(7)
+        x[0] = self.p
+        x[1] = self.T_SL1
+        x[2] = self.T_SL2
+        x[3] = self.T_SLo
+        x[4] = self.f_dsh
+        x[5] = self.f_cond
+        x[6] = self.f_sc
+
+        res = self.model(x)
+        Qdot = self.junctions['inlet_A'].get_massflow() * (self.junctions['outlet_A'].get_enthalpy() - self.junctions['inlet_A'].get_enthalpy())
+        res[0:6] = res[0:6]/Qdot
+        return res
 
 
 class Evaporator(Component):
+    """
+    Evaporator model. This is deprecated, use EvaporatorCounterflow instead.
+    """
     def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, boundary_switch: bool, limit_temp: bool, initial_areafractions: iter = None):
         super().__init__(id, system)
         if len(k) == 2:
@@ -801,8 +1184,9 @@ class Evaporator(Component):
         x[3] = self.xE1
         x[4] = self.xE2
 
-        x = fsolve(self.model, x0=x, xtol=self.system.fun_tol)
-
+        # x = fsolve(self.model, x0=x, xtol=self.system.fun_tol)
+        sol = scipy.optimize.root(self.model, x0=x, tol=self.system.fun_tol)
+        x = sol.x
         self.T0 = x[0]
         self.TSL2 = x[1]
         self.TSLmid = x[2]
@@ -842,8 +1226,245 @@ class Evaporator(Component):
         self.k = k
 
 
+class EvaporatorCounterflow(Component):
+    """
+    Evaporator model for counter flow characteristic.
+    The model is based on a two zone evaporator model. (Evaporating, Superheating)
+    The model also "contains" an expansion organ, as it is trying to reach a superheat temperature at the outlet.
+    """
+    def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, initial_areafractions: iter = None):
+        """
+        Initialize the evaporator model.
+
+        :param id: Name of the object.
+        :param system: System object, that shall contain the condenser object.
+        :param k: Array of heat transfer coefficients [k_evap, k_sh]
+        :param area: Heat transfer area of the evaporator.
+        :param superheat: Superheat at the evaporator outlet
+        :param initial_areafractions: Initial guess for the area fractions.
+        """
+        super().__init__(id, system)
+        if len(k) == 2:
+            self.k_ev = k[0]
+            self.k_sh = k[1]
+        else:
+            raise ValueError('k has to be of length 2. len(k) = {}'.format(len(k)))
+
+        self.area = area
+        self.superheat = superheat
+        self.boundary_switch = boundary_switch
+        self.limit_temp = limit_temp
+        self.T0 = None
+        self.TSL2 = None
+        self.TSLmid = None
+        self.xE1 = None
+        self.xE2 = None
+
+        self.TSL_in = None
+
+        self.junctions['inlet_B'] = None
+        self.junctions['outlet_B'] = None
+
+        if initial_areafractions:
+            if len(initial_areafractions) != 2:
+                raise ValueError('{} allows only initial_areafraction of size 2, but got size {}'.format(self.id, len(initial_areafractions)))
+            self.xE1 = initial_areafractions[0]
+            self.xE2 = initial_areafractions[1]
+
+        else:
+            self.xE1 = 0.8
+            self.xE2 = 1 - self.xE1
+
+    def initialize(self):
+        """
+        Run further initialization. These tasks cannot be done in __init__(), because there have to be junctions added to the component.
+
+        :return:
+        """
+        self.p = self.junctions['inlet_A'].get_pressure()
+        self.TSL1 = self.junctions['inlet_B'].get_temperature()
+        self.T0 = CPPSI('T', 'P', self.p, 'Q', 0, self.junctions['inlet_A'].medium)
+        self.TSL2 = self.TSL1 - (self.TSL1 - self.T0) * 0.8
+        self.TSLmid = (self.TSL1 + self.TSL2)/2
+
+        self.ref = self.junctions['inlet_A'].medium
+        self.ref_HEOS = CoolProp.AbstractState('HEOS', self.ref)
+
+        self.SL = self.junctions['inlet_B'].medium
+
+    def define_export_variables(self):
+        """
+        Define which variables are to be exported.
+
+        :return:
+        """
+        self.export_variables = {
+            'T0': self.T0,
+            'fA_evaporating': self.xE1,
+            'fA_superheat': self.xE2,
+            'p': self.p
+        }
+        return
+
+    def get_function_residual(self):
+        """
+        Return the function residuals of the root finding algorithm by running the model function with the results of the root finding.
+
+        :return: Array of function residuals.
+        """
+        x = np.zeros(5)
+        x[0] = self.p
+        x[1] = self.TSL2
+        x[2] = self.TSLmid
+        x[3] = self.xE1
+        x[4] = self.xE2
+
+        # normalize the energy balance residuals
+        res = self.model(x)
+        Qdot = self.junctions['inlet_A'].get_massflow() * (self.junctions['outlet_A'].get_enthalpy() - self.junctions['inlet_A'].get_enthalpy())
+        res[0:4] = res[0:4]/Qdot
+        return res
+
+    def update_parameter(self, param, value):
+        """
+        Function to update a parameter with a string and value.
+
+        :param param: string of the parameter to be changed.
+        :param value: new value of the parameter
+        :return:
+        """
+        if param == 'k':
+            self.set_k_value(value)
+
+        else:
+            raise ValueError('Cannot set parameter {}'.format(param))
+
+    def set_k_value(self, k):
+        """
+        Set the heat transfer coefficients.
+
+        :param k: Array of heat transfer coefficients. [k_dsh, k_cond, k_sc]
+        :return:
+        """
+        if len(k) == 2:
+            self.k_ev = k[0]
+            self.k_sh = k[1]
+        else:
+            raise ValueError('k has to be of length 2. len(k) = {}'.format(len(k)))
+
+    def update_inlet_interfaces(self):
+        """
+        Update the inlet interfaces by reading the parameters of the inlet junctions.
+
+        :return:
+        """
+        self.hRi = self.junctions['inlet_A'].get_enthalpy()
+        self.mR = self.junctions['inlet_A'].get_massflow()
+
+        self.mSL = self.junctions['inlet_B'].get_massflow()
+        self.T_SLi = self.junctions['inlet_B'].get_temperature()
+
+    def model(self, x):
+        """
+        The model class, that is used to run the root determination algorithm in "calc()".\n
+        The variables are:\n
+        x[0] = self.p\n
+        x[1] = self.TSL2\n
+        x[2] = self.TSLmid\n
+        x[3] = self.xE1\n
+        x[4] = self.xE2
+
+        :param x: Array of free variables.
+        :return: The result of the equation system.
+        """
+        # x[0] = self.p
+        # x[1] = self.TSL2
+        # x[2] = self.TSLmid
+        # x[3] = self.xE1
+        # x[4] = self.xE2
+
+        cpSL = CPPSI('C', 'T', (self.T_SLi + x[1]) / 2, 'P', 1e5, self.SL)  # heat capacity of secondary liquid
+
+        self.ref_HEOS.update(CoolProp.PQ_INPUTS, x[0], 1)  # update the CoolProp handle of refrigerant
+        T0 = self.ref_HEOS.T()  # get saturation temperature
+        hGas = self.ref_HEOS.hmass()  # get enthalpy of saturated gas refrigerant
+        self.ref_HEOS.update(CoolProp.PT_INPUTS, x[0], T0+self.superheat)  # update the CoolProp handle of refrigerant
+        hRout = self.ref_HEOS.hmass()  # get enthalpy of refrigerant outlet
+
+        # Calculate the mean logarithmic temperature value for all two sections of the condenser
+        LMTD_ev = lmtd_calc(x[2], x[1], T0, T0)
+        LMTD_sh = lmtd_calc(self.T_SLi, x[2], T0, T0+self.superheat)
+
+        f = np.zeros(5)
+
+        f[0] = self.mR * (hGas - self.hRi) - self.mSL * cpSL * (x[2] - x[1])
+        f[1] = self.mR * (hGas - self.hRi) - x[3] * self.area * self.k_ev * LMTD_ev
+        f[2] = self.mR * (hRout - hGas) - self.mSL *  cpSL * (self.T_SLi - x[2])
+        f[3] = self.mR * (hRout - hGas) - x[4] * self.area * self.k_sh * LMTD_sh
+        f[4] = 1 - x[3] - x[4]
+
+        return f
+    #
+    #
+    # def dT0_dhRgas(self, h, ref):
+    #     if ref == "R290":
+    #         return 0.0000000035*h - 0.0031609875
+    #     else:
+    #         raise ValueError('Cannot calculate dT0 / dhGas of refrigerant {}'.format(ref))
+    #
+    # def T0_hRgas(self, h, ref):
+    #     if ref == "R290":
+    #         return 0.0000000035*h**2 - 0.0031609875*h + 919.8247650965
+    #     else:
+    #         raise ValueError('Cannot calculate dT0 / dhGas of refrigerant {}'.format(ref))
+
+    def calc(self):
+        """
+        Calculates the evaporator model. With the defined "model" function, it runs a scipy.optimize.root algorithm
+        to determine the roots of the equation system.
+        The result of the root finding is stored and the junctions are updated.
+
+        :return:
+        """
+        self.update_inlet_interfaces()
+
+        x = np.zeros(5)
+        x[0] = self.p
+        x[1] = self.TSL2
+        x[2] = self.TSLmid
+        x[3] = self.xE1
+        x[4] = self.xE2
+
+        # x = fsolve(self.model, x0=x, xtol=self.system.fun_tol)
+        sol = scipy.optimize.root(self.model, x0=x)
+        x = sol.x
+        self.p = x[0]
+        self.TSL2 = x[1]
+        self.TSLmid = x[2]
+        self.xE1 = x[3]
+        self.xE2 = x[4]
+
+        self.T0 = CPPSI('T', 'P', self.p, 'Q', 1, self.junctions['inlet_A'].medium)
+        Tout = self.T0 + self.superheat
+        hout = CPPSI('H', 'T', Tout, 'P', self.p, self.junctions['inlet_A'].medium)
+        self.junctions['outlet_A'].set_values(p=self.p, h=hout, mdot=self.junctions['inlet_A'].get_massflow())
+        hSL2 = CPPSI('H', 'T', self.TSL2, 'P', 1e5, self.junctions['inlet_B'].medium)
+        # self.junctions['inlet_A'].set_values(p=self.p)
+        self.junctions['outlet_B'].set_values(h=hSL2, mdot=self.junctions['inlet_B'].get_massflow())
+
+
 class IHX(Component):
+    """
+    Model of the internal (suction-liquid line) heat exchanger. It is a "simple" UA heat transfer model.
+    """
     def __init__(self, id: str, system: object, UA: float):
+        """
+        Initialize the IHX.
+
+        :param id:  Name of the IHX object.
+        :param system: System object, that shall contain the IHX object.
+        :param UA: UA (i.e. kA) value for the IHX.
+        """
         super().__init__(id=id, system=system)
         self.UA = UA
         self.TA_in = None
@@ -857,6 +1478,12 @@ class IHX(Component):
         self.junctions['outlet_B'] = None
 
     def initialize(self):
+        """
+        Run further initialization. These tasks cannot be done in __init__(), because there have to be junctions added to the component.
+
+
+        :return:
+        """
         self.TA_in = self.junctions['inlet_A'].get_temperature()
         self.TA_out = self.TA_in - 1.
 
@@ -864,10 +1491,16 @@ class IHX(Component):
         self.TB_out = self.TB_in + 1.
 
     def model(self, x):
-        self.TA_in = self.junctions['inlet_A'].get_temperature()
-        self.mdot = self.junctions['inlet_A'].get_massflow()
-        self.TB_in = self.junctions['inlet_B'].get_temperature()
-        self.medium = self.junctions['inlet_A'].medium
+        """
+        The model class, that is used to run the root determination algorithm in "calc()".\n
+        The variables are:\n
+        x[0] = self.TA_out \n
+        x[1] = self.TB_out
+
+        :param x:
+        :return:
+        """
+
         # TA_out = x[0]  |  TB_out = x[1]
 
         pA = self.junctions['inlet_A'].get_pressure()
@@ -901,6 +1534,15 @@ class IHX(Component):
         return f
 
     def calc(self):
+        """
+        Calculates the condenser model. With the defined "model" function, it runs a scipy.optimize.root algorithm
+        to determine the roots of the equation system.
+        The result of the root finding is stored and the junctions are updated.
+
+        :return:
+        """
+        self.update_inlet_interfaces()
+
         x = np.zeros(2)
         x[0] = self.TA_out
         x[1] = self.TB_out
@@ -923,22 +1565,45 @@ class IHX(Component):
         # print(self.junctions['outlet_A'].get_temperature(), self.junctions['outlet_B'].get_temperature())
 
     def get_function_residual(self):
+        """
+        Return the function residuals of the root finding algorithm by running the model function with the results of the root finding
+
+        :return: Array of function residuals.
+        """
         x = np.zeros(2)
         x[0] = self.TA_out
         x[1] = self.TB_out
         return self.model(x)
 
     def update_parameter(self, param, value):
+        """
+        Function to update a parameter with a string and value.
+
+        :param param: string of the parameter to be changed.
+        :param value: new value of the parameter
+        :return:
+        """
         if param == 'k':
             self.set_k_value(value)
 
         else:
             raise ValueError('Cannot set parameter {}'.format(param))
 
-    def set_k_value(self, k):
-        self.k = k
+    def set_UA_value(self, UA):
+        """
+        Set the UA value of the IHX.
+
+        :param UA: New UA value.
+        :return:
+        """
+        self.UA = UA
 
     def define_export_variables(self):
+        """
+        Define which variables are to be exported.
+
+        :return:
+        """
         self.export_variables = {
             'TA_in': self.TA_in,
             'TA_out': self.TA_out,
@@ -949,9 +1614,32 @@ class IHX(Component):
         }
         return
 
+    def update_inlet_interfaces(self):
+        """
+        Update the inlet interfaces by reading the parameters of the inlet junctions.
+
+        :return:
+        """
+        self.TA_in = self.junctions['inlet_A'].get_temperature()
+        self.mdot = self.junctions['inlet_A'].get_massflow()
+        self.TB_in = self.junctions['inlet_B'].get_temperature()
+        self.medium = self.junctions['inlet_A'].medium
+
 
 class Source(Component):
+    """
+    Source components are components, that allow the definition of boundary conditions. Source components define mass flow, pressure and enthalpy.
+    """
     def __init__(self, id: str, system: object, mdot=None, p=None, h=None):
+        """
+        Initialize Source component.
+
+        :param id: Name of the Source object.
+        :param system: System object, that shall contain the Source object.
+        :param mdot: Mass flow of the source
+        :param p: Presure of the source
+        :param h: Enthalpy of the source
+        """
         super().__init__(id=id, system=system)
         if mdot:
             self.mdot = mdot
@@ -962,10 +1650,12 @@ class Source(Component):
 
         self.junctions = {'outlet_A': None}
 
-    def initialize(self):
-        pass
-
     def define_export_variables(self):
+        """
+        Define which variables are to be exported.
+
+        :return:
+        """
         self.export_variables = {
             'mdot': self.mdot,
             'p': self.p,
@@ -974,18 +1664,48 @@ class Source(Component):
         return
 
     def calc(self):
+        """
+        The "calculation" of the Source object is simply updating the outlet junction of the source with the values of the source.
+
+        :return:
+        """
         self.junctions['outlet_A'].set_values(mdot=self.mdot, p=self.p, h=self.h)
 
     def set_enthalpy(self, h):
+        """
+        Set the enthalpy of the source.
+
+        :param h: Enthalpy
+        :return:
+        """
         self.h = h
 
     def set_mdot(self, mdot):
+        """
+        Set the mass flow of the source.
+
+        :param mdot: mass flow
+        :return:
+        """
         self.mdot = mdot
 
     def set_pressure(self, p):
+        """
+        Set the pressure of the source.
+
+        :param p: pressure
+        :return:
+        """
         self.p = p
 
     def update_parameter(self, param, value):
+        """
+        Function to update a parameter with a string and value.
+
+        :param param: string of the parameter to be changed.
+        :param value: new value of the parameter
+        :return:
+        """
         if param == 'h':
             self.set_enthalpy(value)
         elif param == 'mdot':
@@ -997,7 +1717,19 @@ class Source(Component):
 
 
 class Sink(Component):
+    """
+    The sink component is used to terminate medium streams.
+    """
     def __init__(self, id: str, system: object, mdot=None, p=None, h=None):
+        """
+        Initialize the source.
+
+        :param id: Name of the sink object
+        :param system: System object, that shall contain the condenser object.
+        :param mdot: optional
+        :param p: optional
+        :param h: optional
+        """
         super().__init__(id=id, system=system)
         if mdot:
             self.mdot = mdot
@@ -1008,10 +1740,12 @@ class Sink(Component):
 
         self.junctions = {'inlet_A': None}
 
-    def initialize(self):
-        pass
-
     def define_export_variables(self):
+        """
+        Define which variables are to be exported.
+
+        :return:
+        """
         self.export_variables = {
             'mdot': self.mdot,
             'p': self.p,
@@ -1020,107 +1754,21 @@ class Sink(Component):
         return
 
     def calc(self):
+        """
+        The "calculation" of the Sink model is simply updating the internal variables with the values of the inlet junction.
+
+        :return:
+        """
         j = self.junctions['inlet_A']
         self.mdot = j.get_massflow()
         self.p = j.get_pressure()
         self.h = j.get_enthalpy()
 
     def get_temperature(self):
+        """
+        Return the temprature of the Sink.
+
+        :return: Temperature
+        """
         T = CPPSI('T', 'P', self.p, 'H', self.h, self.junctions['inlet_A'].medium)
         return T
-
-
-class HeatExchanger(Component):
-    def __init__(self, id: str, system: object, UA: float):
-        super().__init__(id=id, system=system)
-        self.UA = UA
-
-        self.mdotA = None
-        self.TA_i = None
-        self.TA_o = None
-        self.TB_i = None
-        self.TB_o = None
-        self.mdotB = None
-        self.mediumA = None
-        self.mediumB = None
-
-        self.cpA = None
-        self.cpB = None
-
-        self.junctions['inlet_B'] = None
-        self.junctions['outlet_B'] = None
-
-
-    def initialize(self):
-        self.TA_i = self.junctions['inlet_A'].get_temperature()
-        self.mdotA = self.junctions['inlet_A'].get_massflow()
-        self.TB_i = self.junctions['inlet_B'].get_temperature()
-        self.mdotB = self.junctions['inlet_B'].get_massflow()
-
-        self.TA_o = self.TB_i
-        self.TB_o = self.TA_i
-
-        self.mediumA = self.junctions['inlet_A'].medium
-        self.mediumB = self.junctions['inlet_B'].medium
-
-    def model(self, x):
-        # x = [TA_o, TB_o]
-        # check for the hot side temperature
-        if self.TA_i > self.TB_i:
-            Thi = self.TA_i
-            Tho = x[0]
-            Tci = self.TB_i
-            Tco = x[1]
-        else:
-            Thi = self.TB_i
-            Tho = x[1]
-            Tci = self.TA_i
-            Tco = x[0]
-
-        LMTD = lmtd_calc(Thi, Tho, Tci, Tco)
-        Qdot = self.UA * LMTD
-
-        f = np.zeros(2)
-        if self.TA_i > self.TB_i:
-            f[0] = self.mdotA * self.cpA * (self.TA_i - x[0]) - Qdot
-            f[1] = self.mdotB * self.cpB * (self.TB_i - x[1]) + Qdot
-
-        else:
-            f[0] = self.mdotA * self.cpA * (self.TA_i - x[0]) + Qdot
-            f[1] = self.mdotB * self.cpB * (self.TB_i - x[1]) - Qdot
-
-        return f
-
-    def calc(self):
-        self.TA_i = self.junctions['inlet_A'].get_temperature()
-        self.mdotA = self.junctions['inlet_A'].get_massflow()
-        self.TB_i = self.junctions['inlet_B'].get_temperature()
-        self.mdotB = self.junctions['inlet_B'].get_massflow()
-        self.pA = self.junctions['inlet_A'].get_pressure()
-        self.pB = self.junctions['inlet_B'].get_pressure()
-
-        self.cpA = CPPSI('CPMASS', 'T', self.TA_i, 'P', self.pA, self.mediumA)
-        self.cpB = CPPSI('CPMASS', 'T', self.TB_i, 'P', self.pB, self.mediumB)
-
-        x = np.zeros(2)
-        x[0] = self.TA_o
-        x[1] = self.TB_o
-
-        x = fsolve(self.model, x0=x)
-
-        self.TA_o = x[0]
-        self.TB_o = x[1]
-
-        hA_o = CPPSI('H', 'T', self.TA_o, 'P', self.pA, self.mediumA)
-        hB_o = CPPSI('H', 'T', self.TB_o, 'P', self.pB, self.mediumB)
-
-        self.junctions['outlet_A'].set_values(h=hA_o)
-        self.junctions['outlet_B'].set_values(h=hB_o)
-
-        return
-
-    def get_function_residual(self):
-        x = np.zeros(2)
-        x[0] = self.TA_o
-        x[1] = self.TB_o
-        return self.model(x)
