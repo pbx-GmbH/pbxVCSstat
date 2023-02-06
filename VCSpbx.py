@@ -252,9 +252,14 @@ class System:
         :return: dict with all export variables
         """
         dump_dict = dict()
+
+        # get export variables from components
         for comp in self.components:
             dump_dict.update(comp.dump_export_variables())
 
+        # get junction variables
+        for j in self.junctions:
+            dump_dict.update(j.get_value_dict())
         return dump_dict
 
     def parameter_variation(self, parameters: iter, parameter_handles: iter, function_tolerance: float = 0.1, enthalpy_tolerance: float = 1., save_results = True):
@@ -286,6 +291,7 @@ class System:
             try:
                 self.run()
                 res_dict = self.get_export_variables()
+
                 res_dict['converged'] = True
             except:
                 res_dict['converged'] = False
@@ -558,6 +564,12 @@ class Junction:
             mdot=self.get_massflow() * 1e3)
         return text
 
+    def get_value_dict(self):
+        ret_dict = dict()
+        ret_dict[self.id+'.p'] = self.get_pressure()
+        ret_dict[self.id+'.h'] = self.get_enthalpy()
+        ret_dict[self.id+'.mdot'] = self.get_massflow()
+        return ret_dict
 
 class CompressorEfficiency(Component):
     """
