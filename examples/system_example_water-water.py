@@ -4,38 +4,6 @@ import numpy as np
 import pandas as pd
 
 
-def generate_parameter_list():
-    cpr_range = np.array([1000., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
-
-    T_SL_hot_in_range = np.arange(20, 50.1, 1) + 273.15
-    h_SL_hot_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_hot_in_range])
-
-    T_SL_cold_in_range = np.arange(-10, 10, 1) + 273.15
-    h_SL_cold_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_cold_in_range])
-
-    return_list = list()
-    return_list.append([
-        {'component': cpr, 'parameter': 'speed', 'value': cpr_range[0]},
-        {'component': srchot, 'parameter': 'h', 'value': h_SL_hot_in_range[0]},
-        {'component': srccold, 'parameter': 'h', 'value': h_SL_cold_in_range[0]}
-    ])
-    skip_flag = False
-    for h_SL_cold in h_SL_hot_in_range:
-        return_list.append([{'component': srccold, 'parameter': 'h', 'value': h_SL_cold}])
-        for h_SL_hot in h_SL_cold_in_range:
-            return_list.append([{'component': srchot, 'parameter': 'h', 'value': h_SL_hot}])
-            for cpr_speed in cpr_range:
-                if skip_flag:
-                    skip_flag = False
-                    continue
-                return_list.append([{'component': cpr, 'parameter': 'speed', 'value': cpr_speed}])
-            cpr_range = cpr_range[::-1]
-            skip_flag = True
-        h_SL_hot_in_range = h_SL_hot_in_range[::-1]
-
-    return return_list
-
-
 # parameter setting
 
 cpr_speed = 4200.0  # rpm
@@ -66,7 +34,7 @@ Tc_init = CPPSI('T', 'P', pc_init, 'Q', 0, ref)
 h2_init = CPPSI('H', 'P', pc_init, 'T', 60+273.15, ref)
 h3_init = CPPSI('H', 'P', pc_init, 'Q', 0, ref)
 h4_init = CPPSI('H', 'P', pc_init, 'T', Tc_init-2., ref)
-p0_init = 3.2e5
+p0_init = 2.7e5
 T0_init = CPPSI('T', 'P', p0_init, 'Q', 1, ref)
 h5_init = CPPSI('H', 'P', p0_init, 'T', T0_init+superheat, ref)
 h1_init = CPPSI('H', 'P', p0_init, 'T', T0_init+superheat+2., ref)
@@ -77,9 +45,9 @@ initial_areafraction_evap = [0.2, 0.8]
 # Instantiate components
 system = vcs.System(id='system', tolerance=1.)
 cpr = vcs.CompressorEfficiency(id='cpr', system=system, etaS=0.645, etaV=0.82, etaEL=0.775, stroke=cpr_stroke, speed=cpr_speed)
-cond = vcs.CondenserBPHE(id='cond', system=system, k=k_cond, area=area_cond, subcooling=0.1, initial_areafractions=initial_areafraction_cond)
+cond = vcs.CondenserCounterflow(id='cond', system=system, k=k_cond, area=area_cond, subcooling=0.1, initial_areafractions=initial_areafraction_cond)
 ihx = vcs.IHX(id='ihx', system=system, UA=2.3)
-evap = vcs.Evaporator(id='evap', system=system, k=k_evap, area=area_evap, superheat=superheat, boundary_switch=True, limit_temp=True, initial_areafractions=initial_areafraction_evap)
+evap = vcs.EvaporatorCounterflow(id='evap', system=system, k=k_evap, area=area_evap, superheat=superheat, initial_areafractions=initial_areafraction_evap)
 
 snkcold = vcs.Sink(id='snkcold', system=system)
 srccold = vcs.Source(id='srccold', system=system, mdot=mdot_SL_cold, p=p_SL, h=h_SL_cold_in)

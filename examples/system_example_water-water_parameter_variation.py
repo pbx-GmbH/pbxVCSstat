@@ -4,38 +4,29 @@ import numpy as np
 import pandas as pd
 import pickle
 
+
 def generate_parameter_list():
-    # FOR DEBUG:
-    cpr_range = np.array([1000., 1100., 1250., 1500.])
-    T_SL_cold_in_range = np.arange(-10, -8, 1) + 273.15
-    T_SL_hot_in_range = np.arange(20, 22, 1) + 273.15
-    parameters = [cpr_range, T_SL_hot_in_range, T_SL_cold_in_range]
+    cpr_range = np.array([1000., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
+    # cpr_range = np.array([1000., 1250., 1500., 1750., 2000.])
 
-    # cpr_range = np.array([1000., 1100., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
-    # T_SL_cold_in_range = np.arange(-10, 10, 1) + 273.15
-    # T_SL_hot_in_range = np.arange(20, 50.1, 1) + 273.15
-
+    T_SL_hot_in_range = np.arange(20, 50.1, 1) + 273.15
+    # T_SL_hot_in_range = np.arange(20, 22.1, 1) + 273.15
     h_SL_hot_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_hot_in_range])
+
+    T_SL_cold_in_range = np.arange(-10, 10, 1) + 273.15
+    # T_SL_cold_in_range = np.arange(-10, -6, 1) + 273.15
     h_SL_cold_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_cold_in_range])
 
     return_list = list()
-    return_list.append([
-        {'component': cpr, 'parameter': 'speed', 'value': cpr_range[0]},
-        {'component': srchot, 'parameter': 'h', 'value': h_SL_hot_in_range[0]},
-        {'component': srccold, 'parameter': 'h', 'value': h_SL_cold_in_range[0]}
-    ])
-
+    skip_flag = False
     for h_SL_cold in h_SL_cold_in_range:
-        return_list.append([{'component': srccold, 'parameter': 'h', 'value': h_SL_cold}])
         for h_SL_hot in h_SL_hot_in_range:
-            return_list.append([{'component': srchot, 'parameter': 'h', 'value': h_SL_hot}])
             for cpr_speed in cpr_range:
-                return_list.append([{'component': cpr, 'parameter': 'speed', 'value': cpr_speed}])
+                return_list.append([h_SL_cold, h_SL_hot, cpr_speed])
             cpr_range = cpr_range[::-1]
         h_SL_hot_in_range = h_SL_hot_in_range[::-1]
 
-    return_df = pd.DataFrame(return_list)
-
+    return return_list
 
 
 # parameter setting
@@ -108,7 +99,8 @@ system.run(full_output=True)
 cpr.set_speed(1100)
 # system.run(full_output=True)
 #
-parameter_variation = generate_parameter_list()
-system.parameter_variation(parameters=parameter_variation)
+parameter_values = generate_parameter_list()
+parameter_handles = [srccold.set_enthalpy, srchot.set_enthalpy, cpr.set_speed]
+system.parameter_variation(parameters=parameter_values, parameter_handles=parameter_handles)
 
-df = pd.DataFrame(system.results_parameter_variation)
+

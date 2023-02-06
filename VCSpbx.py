@@ -1,3 +1,8 @@
+"""
+This is the PBX library to simulate vapor compression cycles for stationary working points.
+"""
+from datetime import datetime
+
 import numpy as np
 import scipy.optimize
 from scipy.optimize import fsolve
@@ -6,6 +11,7 @@ from CoolProp.CoolProp import PropsSI as CPPSI
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from imageio import imread
+import pandas as pd
 
 
 def lmtd_calc(Thi, Tho, Tci, Tco):
@@ -21,6 +27,8 @@ def lmtd_calc(Thi, Tho, Tci, Tco):
     # calculating the logaritmic mean temperature of two fluids with defined "hot" and "cold" fluid
     dT1 = Thi - Tco
     dT2 = Tho - Tci
+
+    # add exceptions and limit for the calculations
     if dT2 == 0:
         dT2 = 0.01
     if np.abs(dT1-dT2) < 0.1:
@@ -29,6 +37,7 @@ def lmtd_calc(Thi, Tho, Tci, Tco):
         LMTD = (dT1 - dT2) / np.log(dT1 / dT2)
     if dT1 < 0:
         return 0.0
+
     # prevent NaN values:
     if np.isnan(LMTD):
         LMTD = 1e-6
@@ -86,22 +95,28 @@ class System:
         :param full_output: Declare whether to generate a full output
         :return: True if simulation was successful, False if not
         """
-        # first get the current enthalpy values
+        # first get the current enthalpy values at the junctions
         old_enthalpies = self.get_junction_enthalpies()
         counter = 0
+
+        # calculation loop
         while True:
+
+            # iterate through components and let them calculate their model
             for comp in self.components:
                 comp.calc()
-            # get the new enthalpy values
+
+            # get the new enthalpy values at the junctions
             new_enthalpies = self.get_junction_enthalpies()
 
             # calculate the delta
             abs_delta = np.abs(old_enthalpies - new_enthalpies)
 
+            # store the enthalpy residual in the residual_dict
             for i, junc in enumerate(self.junctions):
                 self.residual_dict[junc.id] = abs_delta[i]
 
-            # get the residual of the functions
+            # get the function residuals of the components
             fun_residual = np.array([])
             for comp in self.components:
                 res = np.array(comp.get_function_residual())
@@ -113,9 +128,10 @@ class System:
             # check if delta is lower than tolerance
             if np.max(abs_delta) < self.tolerance and np.max(fun_residual) < self.fun_tol:
                 break
+
             counter += 1
-            if counter >= 10:
-                a = 0
+
+            # cancel iteration, if n_max is reached without satisfying solution
             if counter > self.n_max:
                 print('Reached {} iterations without solution'.format(counter))
                 for comp in self.components:
@@ -132,6 +148,7 @@ class System:
         for comp in self.components:
             self.residual_functions[comp.id] = comp.get_function_residual()
 
+        # if full_output, print everything
         if full_output:
             print('---')
             print('Iteration finished after {} iterations'.format(counter))
@@ -240,7 +257,7 @@ class System:
 
         return dump_dict
 
-    def parameter_variation(self, parameters: iter, parameter_handles: iter, function_tolerance: float = 0.1, enthalpy_tolerance: float = 1.):
+    def parameter_variation(self, parameters: iter, parameter_handles: iter, function_tolerance: float = 0.1, enthalpy_tolerance: float = 1., save_results = True):
         """
         THIS IS STILL UNDER DEVELOPMENT!
         Calculate a parameter variation field. Parameters have to be parsed with their object handle functions.
@@ -256,13 +273,16 @@ class System:
         self.tolerance = enthalpy_tolerance
         self.fun_tol = function_tolerance
 
+        # loop through the parameters list
         for params in tqdm(parameters):
 
             # update the parameters
-            for i, p in tqdm(params):
+            for i, p in enumerate(params):
                 parameter_handles[i](p)
 
             res_dict = dict()
+
+            # try to calculate the system with the new parameter setting and store the result
             try:
                 self.run()
                 res_dict = self.get_export_variables()
@@ -272,9 +292,15 @@ class System:
 
             self.results_parameter_variation.append(res_dict)
 
+        # convert the list of dictionaries to a pd.DataFrame
+        self.results_parameter_variation = pd.DataFrame(self.results_parameter_variation)
 
-
-
+        # save the result, if save_results == True
+        if save_results:
+            now = datetime.now()
+            timestamp = now.strftime('%y%m%d-%H%M%S')
+            filename = timestamp + '_parameter_variation.pkl'
+            self.results_parameter_variation.to_pickle(filename)
 
 class Component:
     """
@@ -314,7 +340,7 @@ class Component:
 
         :return:
         """
-        print('{} has no defined calc() function!'.format(self.id))
+        raise ValueError('{} has no defined calc() function!'.format(self.id))
 
     def check_junctions(self):
         """
@@ -451,6 +477,7 @@ class Junction:
 
         self.s = CPPSI('S', 'P', self.p, 'H', self.h, self.medium)
 
+        # try to calculate x (only possible for refrigerants)
         try:
             self.x = self.calculate_x()
         except:
@@ -571,13 +598,16 @@ class CompressorEfficiency(Component):
 
         :return:
         """
+
+        # get the inlet interface values
         self.Tin = self.junctions['inlet_A'].get_temperature()
         self.pin = self.junctions['inlet_A'].get_pressure()
         self.pout = self.junctions['outlet_A'].get_pressure()
 
         # compressor model based on efficiency parameters: etaS...isentropic / etaV...volumetric
-        rho = CPPSI("D", "P", self.pin, "T", self.Tin, "R290")
+        rho = CPPSI("D", "P", self.pin, "T", self.Tin, "R290")  # density of refrigerant at inlet
         mdot = self.speed / 60 * self.stroke * self.etaV * rho  # mass flow
+
         hin = CPPSI("H", "T", self.Tin, "P", self.pin, "R290")  # inlet enthalpy
         sin = CPPSI("S", "T", self.Tin, "P", self.pin, "R290")  # inlet entropy
         houtS = CPPSI("H", "S", sin, "P", self.pout, "R290")  # enthalpy at outlet under isentropic conditions
@@ -585,8 +615,9 @@ class CompressorEfficiency(Component):
         hout = self.P_compression / mdot + hin  # real outlet enthalpy
         Tout = CPPSI("T", "P", self.pout, "H", hout, "R290")  # outlet temperature
 
-        self.Pel = self.P_compression/self.etaEL
+        self.Pel = self.P_compression/self.etaEL  # eletrical power consumption
 
+        # update the outlet junction
         self.junctions['outlet_A'].set_values(mdot=mdot, h=hout)
 
     def set_speed(self, speed):
@@ -867,7 +898,11 @@ class CondenserCounterflow(Component):
 
         :return:
         """
+
+        # first get the values of the inlet junctions
         self.update_inlet_interfaces()
+
+        # read the medium handles from inlet junctions
         self.ref = self.junctions['inlet_A'].medium
         self.ref_HEOS = CoolProp.AbstractState('HEOS', self.ref)
         self.SL = self.junctions['inlet_B'].medium
@@ -965,6 +1000,7 @@ class CondenserCounterflow(Component):
         """
         self.update_inlet_interfaces()
 
+        # build the x vector with all variables
         x = np.zeros(7)
         x[0] = self.p
         x[1] = self.T_SL1
@@ -974,9 +1010,11 @@ class CondenserCounterflow(Component):
         x[5] = self.f_cond
         x[6] = self.f_sc
 
+        # run root finding algorithm and store the result
         sol = scipy.optimize.root(self.model, x0=x)
         x = sol.x
 
+        # store the results in the object variables
         self.p = x[0]
         self.T_SL1 = x[1]
         self.T_SL2 = x[2]
@@ -985,6 +1023,7 @@ class CondenserCounterflow(Component):
         self.f_cond = x[5]
         self.f_sc = x[6]
 
+        # calculate additional object variables
         self.ref_HEOS.update(CoolProp.PQ_INPUTS, self.p, 0)
         self.TC = self.ref_HEOS.T()
 
@@ -996,6 +1035,7 @@ class CondenserCounterflow(Component):
         mdot = self.junctions['inlet_A'].get_massflow()
         hB_out = CPPSI('H', 'T', self.T_SL1, 'P', self.junctions['inlet_B'].get_pressure(), self.junctions['inlet_B'].medium)
 
+        # update the outlet junctions
         self.junctions['outlet_A'].set_values(p=self.p, h=hout, mdot=mdot)
         self.junctions['inlet_A'].set_values(p=self.p)
         self.junctions['outlet_B'].set_values(h=hB_out)
@@ -1403,19 +1443,6 @@ class EvaporatorCounterflow(Component):
         f[4] = 1 - x[3] - x[4]
 
         return f
-    #
-    #
-    # def dT0_dhRgas(self, h, ref):
-    #     if ref == "R290":
-    #         return 0.0000000035*h - 0.0031609875
-    #     else:
-    #         raise ValueError('Cannot calculate dT0 / dhGas of refrigerant {}'.format(ref))
-    #
-    # def T0_hRgas(self, h, ref):
-    #     if ref == "R290":
-    #         return 0.0000000035*h**2 - 0.0031609875*h + 919.8247650965
-    #     else:
-    #         raise ValueError('Cannot calculate dT0 / dhGas of refrigerant {}'.format(ref))
 
     def calc(self):
         """
@@ -1427,6 +1454,7 @@ class EvaporatorCounterflow(Component):
         """
         self.update_inlet_interfaces()
 
+        # build the x vector with all variables
         x = np.zeros(5)
         x[0] = self.p
         x[1] = self.TSL2
@@ -1434,21 +1462,25 @@ class EvaporatorCounterflow(Component):
         x[3] = self.xE1
         x[4] = self.xE2
 
-        # x = fsolve(self.model, x0=x, xtol=self.system.fun_tol)
+        # run root finding algorithm and store the result
         sol = scipy.optimize.root(self.model, x0=x)
         x = sol.x
+
+        # store the results in the object variables
         self.p = x[0]
         self.TSL2 = x[1]
         self.TSLmid = x[2]
         self.xE1 = x[3]
         self.xE2 = x[4]
 
+        # calculate additional object variables
         self.T0 = CPPSI('T', 'P', self.p, 'Q', 1, self.junctions['inlet_A'].medium)
         Tout = self.T0 + self.superheat
         hout = CPPSI('H', 'T', Tout, 'P', self.p, self.junctions['inlet_A'].medium)
-        self.junctions['outlet_A'].set_values(p=self.p, h=hout, mdot=self.junctions['inlet_A'].get_massflow())
         hSL2 = CPPSI('H', 'T', self.TSL2, 'P', 1e5, self.junctions['inlet_B'].medium)
-        # self.junctions['inlet_A'].set_values(p=self.p)
+
+        # update the outlet junctions
+        self.junctions['outlet_A'].set_values(p=self.p, h=hout, mdot=self.junctions['inlet_A'].get_massflow())
         self.junctions['outlet_B'].set_values(h=hSL2, mdot=self.junctions['inlet_B'].get_massflow())
 
 
@@ -1499,15 +1531,11 @@ class IHX(Component):
         :param x:
         :return:
         """
+        # calculate heat capacities based on guessed temperature values
+        cp_A = CPPSI("CPMASS", "T", self.TA_in, "P", self.pA, self.medium)
+        cp_B = CPPSI("CPMASS", "T", self.TB_in, "P", self.pB, self.medium)
 
-        # TA_out = x[0]  |  TB_out = x[1]
-
-        pA = self.junctions['inlet_A'].get_pressure()
-        pB = self.junctions['inlet_B'].get_pressure()
-
-        cp_A = CPPSI("CPMASS", "T", self.TA_in, "P", pA, self.medium)
-        cp_B = CPPSI("CPMASS", "T", self.TB_in, "P", pB, self.medium)
-
+        # check direction of hot and cold medium flow
         if self.TA_in > self.TB_in:
             Thi = self.TA_in
             Tho = x[0]
@@ -1519,10 +1547,12 @@ class IHX(Component):
             Tci = self.TA_in
             Tco = x[0]
 
+        # caluclate the mean log. temperature difference
         LMTD = lmtd_calc(Thi, Tho, Tci, Tco)
         Qdot = self.UA * LMTD
 
         f = np.zeros(2)
+        # return the zero vectors with correct sign
         if self.TA_in > self.TB_in:
             f[0] = self.mdot * cp_A * (self.TA_in - x[0]) - Qdot
             f[1] = self.mdot * cp_B * (self.TB_in - x[1]) + Qdot
@@ -1623,6 +1653,11 @@ class IHX(Component):
         self.mdot = self.junctions['inlet_A'].get_massflow()
         self.TB_in = self.junctions['inlet_B'].get_temperature()
         self.medium = self.junctions['inlet_A'].medium
+
+        # get the interface pressures
+        self.pA = self.junctions['inlet_A'].get_pressure()
+        self.pB = self.junctions['inlet_B'].get_pressure()
+
 
 
 class Source(Component):
