@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VCSpbx module &mdash; VSCstat v0.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to VSCstat’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> VSCstat
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">VCSpbx module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.Component"><code class="docutils literal notranslate"><span class="pre">Component</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Component.calc"><code class="docutils literal notranslate"><span class="pre">Component.calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Component.check_junctions"><code class="docutils literal notranslate"><span class="pre">Component.check_junctions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Component.define_export_variables"><code class="docutils literal notranslate"><span class="pre">Component.define_export_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Component.dump_export_variables"><code class="docutils literal notranslate"><span class="pre">Component.dump_export_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Component.get_Ts_data"><code class="docutils literal notranslate"><span class="pre">Component.get_Ts_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Component.get_function_residual"><code class="docutils literal notranslate"><span class="pre">Component.get_function_residual()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Component.get_ph_data"><code class="docutils literal notranslate"><span class="pre">Component.get_ph_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Component.initialize"><code class="docutils literal notranslate"><span class="pre">Component.initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Component.print_parameters"><code class="docutils literal notranslate"><span class="pre">Component.print_parameters()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.CompressorEfficiency"><code class="docutils literal notranslate"><span class="pre">CompressorEfficiency</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CompressorEfficiency.calc"><code class="docutils literal notranslate"><span class="pre">CompressorEfficiency.calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CompressorEfficiency.define_export_variables"><code class="docutils literal notranslate"><span class="pre">CompressorEfficiency.define_export_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CompressorEfficiency.get_Ts_data"><code class="docutils literal notranslate"><span class="pre">CompressorEfficiency.get_Ts_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CompressorEfficiency.get_ph_data"><code class="docutils literal notranslate"><span class="pre">CompressorEfficiency.get_ph_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CompressorEfficiency.get_power"><code class="docutils literal notranslate"><span class="pre">CompressorEfficiency.get_power()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CompressorEfficiency.set_speed"><code class="docutils literal notranslate"><span class="pre">CompressorEfficiency.set_speed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CompressorEfficiency.update_parameter"><code class="docutils literal notranslate"><span class="pre">CompressorEfficiency.update_parameter()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.Condenser"><code class="docutils literal notranslate"><span class="pre">Condenser</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Condenser.calc"><code class="docutils literal notranslate"><span class="pre">Condenser.calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Condenser.get_function_residual"><code class="docutils literal notranslate"><span class="pre">Condenser.get_function_residual()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Condenser.get_outlet_temp"><code class="docutils literal notranslate"><span class="pre">Condenser.get_outlet_temp()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Condenser.get_ph_data"><code class="docutils literal notranslate"><span class="pre">Condenser.get_ph_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Condenser.initialize"><code class="docutils literal notranslate"><span class="pre">Condenser.initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Condenser.model"><code class="docutils literal notranslate"><span class="pre">Condenser.model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Condenser.set_air_mdot"><code class="docutils literal notranslate"><span class="pre">Condenser.set_air_mdot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Condenser.set_air_parameters"><code class="docutils literal notranslate"><span class="pre">Condenser.set_air_parameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Condenser.set_air_temp"><code class="docutils literal notranslate"><span class="pre">Condenser.set_air_temp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.CondenserCounterflow"><code class="docutils literal notranslate"><span class="pre">CondenserCounterflow</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CondenserCounterflow.calc"><code class="docutils literal notranslate"><span class="pre">CondenserCounterflow.calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CondenserCounterflow.define_export_variables"><code class="docutils literal notranslate"><span class="pre">CondenserCounterflow.define_export_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CondenserCounterflow.get_function_residual"><code class="docutils literal notranslate"><span class="pre">CondenserCounterflow.get_function_residual()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CondenserCounterflow.initialize"><code class="docutils literal notranslate"><span class="pre">CondenserCounterflow.initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CondenserCounterflow.model"><code class="docutils literal notranslate"><span class="pre">CondenserCounterflow.model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CondenserCounterflow.set_k_value"><code class="docutils literal notranslate"><span class="pre">CondenserCounterflow.set_k_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CondenserCounterflow.update_inlet_interfaces"><code class="docutils literal notranslate"><span class="pre">CondenserCounterflow.update_inlet_interfaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.CondenserCounterflow.update_parameter"><code class="docutils literal notranslate"><span class="pre">CondenserCounterflow.update_parameter()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.Evaporator"><code class="docutils literal notranslate"><span class="pre">Evaporator</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Evaporator.calc"><code class="docutils literal notranslate"><span class="pre">Evaporator.calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Evaporator.define_export_variables"><code class="docutils literal notranslate"><span class="pre">Evaporator.define_export_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Evaporator.get_function_residual"><code class="docutils literal notranslate"><span class="pre">Evaporator.get_function_residual()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Evaporator.initialize"><code class="docutils literal notranslate"><span class="pre">Evaporator.initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Evaporator.model"><code class="docutils literal notranslate"><span class="pre">Evaporator.model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Evaporator.set_k_value"><code class="docutils literal notranslate"><span class="pre">Evaporator.set_k_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Evaporator.update_parameter"><code class="docutils literal notranslate"><span class="pre">Evaporator.update_parameter()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.EvaporatorCounterflow"><code class="docutils literal notranslate"><span class="pre">EvaporatorCounterflow</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.EvaporatorCounterflow.calc"><code class="docutils literal notranslate"><span class="pre">EvaporatorCounterflow.calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.EvaporatorCounterflow.define_export_variables"><code class="docutils literal notranslate"><span class="pre">EvaporatorCounterflow.define_export_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.EvaporatorCounterflow.get_function_residual"><code class="docutils literal notranslate"><span class="pre">EvaporatorCounterflow.get_function_residual()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.EvaporatorCounterflow.initialize"><code class="docutils literal notranslate"><span class="pre">EvaporatorCounterflow.initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.EvaporatorCounterflow.model"><code class="docutils literal notranslate"><span class="pre">EvaporatorCounterflow.model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.EvaporatorCounterflow.set_k_value"><code class="docutils literal notranslate"><span class="pre">EvaporatorCounterflow.set_k_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.EvaporatorCounterflow.update_inlet_interfaces"><code class="docutils literal notranslate"><span class="pre">EvaporatorCounterflow.update_inlet_interfaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.EvaporatorCounterflow.update_parameter"><code class="docutils literal notranslate"><span class="pre">EvaporatorCounterflow.update_parameter()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.IHX"><code class="docutils literal notranslate"><span class="pre">IHX</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.IHX.calc"><code class="docutils literal notranslate"><span class="pre">IHX.calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.IHX.define_export_variables"><code class="docutils literal notranslate"><span class="pre">IHX.define_export_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.IHX.get_function_residual"><code class="docutils literal notranslate"><span class="pre">IHX.get_function_residual()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.IHX.initialize"><code class="docutils literal notranslate"><span class="pre">IHX.initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.IHX.model"><code class="docutils literal notranslate"><span class="pre">IHX.model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.IHX.set_UA_value"><code class="docutils literal notranslate"><span class="pre">IHX.set_UA_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.IHX.update_inlet_interfaces"><code class="docutils literal notranslate"><span class="pre">IHX.update_inlet_interfaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.IHX.update_parameter"><code class="docutils literal notranslate"><span class="pre">IHX.update_parameter()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.Junction"><code class="docutils literal notranslate"><span class="pre">Junction</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Junction.calculate_x"><code class="docutils literal notranslate"><span class="pre">Junction.calculate_x()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Junction.get_enthalpy"><code class="docutils literal notranslate"><span class="pre">Junction.get_enthalpy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Junction.get_entropy"><code class="docutils literal notranslate"><span class="pre">Junction.get_entropy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Junction.get_massflow"><code class="docutils literal notranslate"><span class="pre">Junction.get_massflow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Junction.get_plot_string"><code class="docutils literal notranslate"><span class="pre">Junction.get_plot_string()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Junction.get_pressure"><code class="docutils literal notranslate"><span class="pre">Junction.get_pressure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Junction.get_quality"><code class="docutils literal notranslate"><span class="pre">Junction.get_quality()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Junction.get_temperature"><code class="docutils literal notranslate"><span class="pre">Junction.get_temperature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Junction.set_values"><code class="docutils literal notranslate"><span class="pre">Junction.set_values()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.Sink"><code class="docutils literal notranslate"><span class="pre">Sink</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Sink.calc"><code class="docutils literal notranslate"><span class="pre">Sink.calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Sink.define_export_variables"><code class="docutils literal notranslate"><span class="pre">Sink.define_export_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Sink.get_temperature"><code class="docutils literal notranslate"><span class="pre">Sink.get_temperature()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.Source"><code class="docutils literal notranslate"><span class="pre">Source</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Source.calc"><code class="docutils literal notranslate"><span class="pre">Source.calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Source.define_export_variables"><code class="docutils literal notranslate"><span class="pre">Source.define_export_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Source.set_enthalpy"><code class="docutils literal notranslate"><span class="pre">Source.set_enthalpy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Source.set_mdot"><code class="docutils literal notranslate"><span class="pre">Source.set_mdot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Source.set_pressure"><code class="docutils literal notranslate"><span class="pre">Source.set_pressure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.Source.update_parameter"><code class="docutils literal notranslate"><span class="pre">Source.update_parameter()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.System"><code class="docutils literal notranslate"><span class="pre">System</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.System.add_component"><code class="docutils literal notranslate"><span class="pre">System.add_component()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.System.add_junction"><code class="docutils literal notranslate"><span class="pre">System.add_junction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.System.get_export_variables"><code class="docutils literal notranslate"><span class="pre">System.get_export_variables()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.System.get_junction_enthalpies"><code class="docutils literal notranslate"><span class="pre">System.get_junction_enthalpies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.System.initialize"><code class="docutils literal notranslate"><span class="pre">System.initialize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.System.parameter_variation"><code class="docutils literal notranslate"><span class="pre">System.parameter_variation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.System.plot_cycle"><code class="docutils literal notranslate"><span class="pre">System.plot_cycle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.System.run"><code class="docutils literal notranslate"><span class="pre">System.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#VCSpbx.System.update_parameters"><code class="docutils literal notranslate"><span class="pre">System.update_parameters()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.dh_cond"><code class="docutils literal notranslate"><span class="pre">dh_cond()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#VCSpbx.lmtd_calc"><code class="docutils literal notranslate"><span class="pre">lmtd_calc()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">VSCstat</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+      <li class="breadcrumb-item active">VCSpbx module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/VCSpbx.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-VCSpbx">
+<span id="vcspbx-module"></span><h1>VCSpbx module<a class="headerlink" href="#module-VCSpbx" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.Component">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">Component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Component" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class of Components. It contains all functions, that are needed for the System Class to run but with dummy outputs.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Component.calc">
+<span class="sig-name descname"><span class="pre">calc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Component.calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Component.calc" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function has to be overwritten in the specific component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Component.check_junctions">
+<span class="sig-name descname"><span class="pre">check_junctions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Component.check_junctions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Component.check_junctions" title="Permalink to this definition"></a></dt>
+<dd><p>Check if the component has a junction connected to every port.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Component.define_export_variables">
+<span class="sig-name descname"><span class="pre">define_export_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Component.define_export_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Component.define_export_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function has to be overwritten in the specific component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Component.dump_export_variables">
+<span class="sig-name descname"><span class="pre">dump_export_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Component.dump_export_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Component.dump_export_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Return the values of the export variables as a dictionary. The key of the dictionary is generated the following way:
+&lt;self.id&gt;.&lt;variable_key&gt;</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The dictionary with all export variables.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Component.get_Ts_data">
+<span class="sig-name descname"><span class="pre">get_Ts_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">npoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Component.get_Ts_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Component.get_Ts_data" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function has to be overwritten in the specific component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>npoints</strong> – Define the number of points on the Ts diagram</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Component.get_function_residual">
+<span class="sig-name descname"><span class="pre">get_function_residual</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Component.get_function_residual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Component.get_function_residual" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function to return the function residual. If a component has a function residual, this function has
+to be overwritten in the component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Component.get_ph_data">
+<span class="sig-name descname"><span class="pre">get_ph_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">npoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Component.get_ph_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Component.get_ph_data" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function has to be overwritten in the specific component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>npoints</strong> – Define the number of points on the ph diagram</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Component.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Component.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Component.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function can be overwritten in the specific component class, if initialization is needed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Component.print_parameters">
+<span class="sig-name descname"><span class="pre">print_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Component.print_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Component.print_parameters" title="Permalink to this definition"></a></dt>
+<dd><p>Print the parameters of the component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.CompressorEfficiency">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">CompressorEfficiency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etaS</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etaV</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stroke</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">etaEL</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CompressorEfficiency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CompressorEfficiency" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#VCSpbx.Component" title="VCSpbx.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a></p>
+<p>Compressor model based on isentropic and volumetric efficiency. Also a parameter for electric efficiency is added.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CompressorEfficiency.calc">
+<span class="sig-name descname"><span class="pre">calc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CompressorEfficiency.calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CompressorEfficiency.calc" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the compressor model. With the pressures at inlet and outlet and the temperature of the inlet,
+the model calculates the outlet enthalpy and updates the outlet junction accordingly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CompressorEfficiency.define_export_variables">
+<span class="sig-name descname"><span class="pre">define_export_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CompressorEfficiency.define_export_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CompressorEfficiency.define_export_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Define which variables are to be exported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CompressorEfficiency.get_Ts_data">
+<span class="sig-name descname"><span class="pre">get_Ts_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">npoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CompressorEfficiency.get_Ts_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CompressorEfficiency.get_Ts_data" title="Permalink to this definition"></a></dt>
+<dd><p>Return data for Ts-diagrams.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>npoints</strong> – Define the number of points on the Ts diagram</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Array with temperature and entropy [T, s]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CompressorEfficiency.get_ph_data">
+<span class="sig-name descname"><span class="pre">get_ph_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">npoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CompressorEfficiency.get_ph_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CompressorEfficiency.get_ph_data" title="Permalink to this definition"></a></dt>
+<dd><p>Return data for ph-diagrams.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>npoints</strong> – Define the number of points on the Ts diagram</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Array with temperature and entropy [T, s]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CompressorEfficiency.get_power">
+<span class="sig-name descname"><span class="pre">get_power</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CompressorEfficiency.get_power"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CompressorEfficiency.get_power" title="Permalink to this definition"></a></dt>
+<dd><p>Return the elecrtical power consumption of the compressor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Electrical power consumption</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CompressorEfficiency.set_speed">
+<span class="sig-name descname"><span class="pre">set_speed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">speed</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CompressorEfficiency.set_speed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CompressorEfficiency.set_speed" title="Permalink to this definition"></a></dt>
+<dd><p>Set the speed of the compressor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>speed</strong> – Speed of compressor [rpm]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CompressorEfficiency.update_parameter">
+<span class="sig-name descname"><span class="pre">update_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CompressorEfficiency.update_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CompressorEfficiency.update_parameter" title="Permalink to this definition"></a></dt>
+<dd><p>Function to update a parameter with a string and value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> – string of the parameter to be changed.</p></li>
+<li><p><strong>value</strong> – new value of the parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.Condenser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">Condenser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subcooling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_air_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mdot_air_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Condenser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Condenser" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#VCSpbx.Component" title="VCSpbx.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a></p>
+<p>Condenser model with air. This is deprecated.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Condenser.calc">
+<span class="sig-name descname"><span class="pre">calc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Condenser.calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Condenser.calc" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function has to be overwritten in the specific component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Condenser.get_function_residual">
+<span class="sig-name descname"><span class="pre">get_function_residual</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Condenser.get_function_residual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Condenser.get_function_residual" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function to return the function residual. If a component has a function residual, this function has
+to be overwritten in the component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Condenser.get_outlet_temp">
+<span class="sig-name descname"><span class="pre">get_outlet_temp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Condenser.get_outlet_temp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Condenser.get_outlet_temp" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Condenser.get_ph_data">
+<span class="sig-name descname"><span class="pre">get_ph_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">npoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Condenser.get_ph_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Condenser.get_ph_data" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function has to be overwritten in the specific component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>npoints</strong> – Define the number of points on the ph diagram</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Condenser.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Condenser.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Condenser.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function can be overwritten in the specific component class, if initialization is needed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Condenser.model">
+<span class="sig-name descname"><span class="pre">model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Condenser.model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Condenser.model" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Condenser.set_air_mdot">
+<span class="sig-name descname"><span class="pre">set_air_mdot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mdot_air</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Condenser.set_air_mdot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Condenser.set_air_mdot" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Condenser.set_air_parameters">
+<span class="sig-name descname"><span class="pre">set_air_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T_air</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mdot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Condenser.set_air_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Condenser.set_air_parameters" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Condenser.set_air_temp">
+<span class="sig-name descname"><span class="pre">set_air_temp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">T_air</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Condenser.set_air_temp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Condenser.set_air_temp" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.CondenserCounterflow">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">CondenserCounterflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subcooling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_areafractions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">iter</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CondenserCounterflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CondenserCounterflow" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#VCSpbx.Component" title="VCSpbx.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a></p>
+<p>Condenser model for counter flow characteristic.
+The model is based on a three zone condeser model. (Desuperheating, Condensing, Subcooling)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CondenserCounterflow.calc">
+<span class="sig-name descname"><span class="pre">calc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CondenserCounterflow.calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CondenserCounterflow.calc" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the condenser model. With the defined “model” function, it runs a scipy.optimize.root algorithm
+to determine the roots of the equation system.
+The result of the root finding is stored and the junctions are updated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CondenserCounterflow.define_export_variables">
+<span class="sig-name descname"><span class="pre">define_export_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CondenserCounterflow.define_export_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CondenserCounterflow.define_export_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Define which variables are to be exported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CondenserCounterflow.get_function_residual">
+<span class="sig-name descname"><span class="pre">get_function_residual</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CondenserCounterflow.get_function_residual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CondenserCounterflow.get_function_residual" title="Permalink to this definition"></a></dt>
+<dd><p>Return the function residuals of the root finding algorithm by running the model function with the results of the root finding</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Array of function residuals.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CondenserCounterflow.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CondenserCounterflow.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CondenserCounterflow.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>Run further initialization. These tasks cannot be done in __init__(), because there have to be junctions added to the component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CondenserCounterflow.model">
+<span class="sig-name descname"><span class="pre">model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CondenserCounterflow.model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CondenserCounterflow.model" title="Permalink to this definition"></a></dt>
+<dd><p>The model class, that is used to run the root determination algorithm in “calc()”.</p>
+<p>The variables are:</p>
+<p>x[0] = self.p</p>
+<p>x[1] = self.T_SL1</p>
+<p>x[2] = self.T_SL2</p>
+<p>x[3] = self.T_SLo</p>
+<p>x[4] = self.f_dsh</p>
+<p>x[5] = self.f_cond</p>
+<p>x[6] = self.f_sc</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> – Array of free variables.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The result of the equation system.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CondenserCounterflow.set_k_value">
+<span class="sig-name descname"><span class="pre">set_k_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CondenserCounterflow.set_k_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CondenserCounterflow.set_k_value" title="Permalink to this definition"></a></dt>
+<dd><p>Set the heat transfer coefficients.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>k</strong> – Array of heat transfer coefficients. [k_dsh, k_cond, k_sc]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CondenserCounterflow.update_inlet_interfaces">
+<span class="sig-name descname"><span class="pre">update_inlet_interfaces</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CondenserCounterflow.update_inlet_interfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CondenserCounterflow.update_inlet_interfaces" title="Permalink to this definition"></a></dt>
+<dd><p>Update the inlet interfaces by reading the parameters of the inlet junctions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.CondenserCounterflow.update_parameter">
+<span class="sig-name descname"><span class="pre">update_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#CondenserCounterflow.update_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.CondenserCounterflow.update_parameter" title="Permalink to this definition"></a></dt>
+<dd><p>Function to update a parameter with a string and value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> – string of the parameter to be changed.</p></li>
+<li><p><strong>value</strong> – new value of the parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.Evaporator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">Evaporator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superheat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_switch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit_temp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_areafractions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">iter</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Evaporator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Evaporator" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#VCSpbx.Component" title="VCSpbx.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a></p>
+<p>Evaporator model. This is deprecated, use EvaporatorCounterflow instead.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Evaporator.calc">
+<span class="sig-name descname"><span class="pre">calc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Evaporator.calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Evaporator.calc" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function has to be overwritten in the specific component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Evaporator.define_export_variables">
+<span class="sig-name descname"><span class="pre">define_export_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Evaporator.define_export_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Evaporator.define_export_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function has to be overwritten in the specific component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Evaporator.get_function_residual">
+<span class="sig-name descname"><span class="pre">get_function_residual</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Evaporator.get_function_residual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Evaporator.get_function_residual" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function to return the function residual. If a component has a function residual, this function has
+to be overwritten in the component class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Evaporator.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Evaporator.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Evaporator.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy function for Component. This function can be overwritten in the specific component class, if initialization is needed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Evaporator.model">
+<span class="sig-name descname"><span class="pre">model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Evaporator.model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Evaporator.model" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Evaporator.set_k_value">
+<span class="sig-name descname"><span class="pre">set_k_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Evaporator.set_k_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Evaporator.set_k_value" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Evaporator.update_parameter">
+<span class="sig-name descname"><span class="pre">update_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Evaporator.update_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Evaporator.update_parameter" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.EvaporatorCounterflow">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">EvaporatorCounterflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superheat</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_areafractions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">iter</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#EvaporatorCounterflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.EvaporatorCounterflow" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#VCSpbx.Component" title="VCSpbx.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a></p>
+<p>Evaporator model for counter flow characteristic.
+The model is based on a two zone evaporator model. (Evaporating, Superheating)
+The model also “contains” an expansion organ, as it is trying to reach a superheat temperature at the outlet.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.EvaporatorCounterflow.calc">
+<span class="sig-name descname"><span class="pre">calc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#EvaporatorCounterflow.calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.EvaporatorCounterflow.calc" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the evaporator model. With the defined “model” function, it runs a scipy.optimize.root algorithm
+to determine the roots of the equation system.
+The result of the root finding is stored and the junctions are updated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.EvaporatorCounterflow.define_export_variables">
+<span class="sig-name descname"><span class="pre">define_export_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#EvaporatorCounterflow.define_export_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.EvaporatorCounterflow.define_export_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Define which variables are to be exported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.EvaporatorCounterflow.get_function_residual">
+<span class="sig-name descname"><span class="pre">get_function_residual</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#EvaporatorCounterflow.get_function_residual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.EvaporatorCounterflow.get_function_residual" title="Permalink to this definition"></a></dt>
+<dd><p>Return the function residuals of the root finding algorithm by running the model function with the results of the root finding.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Array of function residuals.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.EvaporatorCounterflow.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#EvaporatorCounterflow.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.EvaporatorCounterflow.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>Run further initialization. These tasks cannot be done in __init__(), because there have to be junctions added to the component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.EvaporatorCounterflow.model">
+<span class="sig-name descname"><span class="pre">model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#EvaporatorCounterflow.model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.EvaporatorCounterflow.model" title="Permalink to this definition"></a></dt>
+<dd><p>The model class, that is used to run the root determination algorithm in “calc()”.</p>
+<p>The variables are:</p>
+<p>x[0] = self.p</p>
+<p>x[1] = self.TSL2</p>
+<p>x[2] = self.TSLmid</p>
+<p>x[3] = self.xE1</p>
+<p>x[4] = self.xE2</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> – Array of free variables.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The result of the equation system.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.EvaporatorCounterflow.set_k_value">
+<span class="sig-name descname"><span class="pre">set_k_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#EvaporatorCounterflow.set_k_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.EvaporatorCounterflow.set_k_value" title="Permalink to this definition"></a></dt>
+<dd><p>Set the heat transfer coefficients.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>k</strong> – Array of heat transfer coefficients. [k_dsh, k_cond, k_sc]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.EvaporatorCounterflow.update_inlet_interfaces">
+<span class="sig-name descname"><span class="pre">update_inlet_interfaces</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#EvaporatorCounterflow.update_inlet_interfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.EvaporatorCounterflow.update_inlet_interfaces" title="Permalink to this definition"></a></dt>
+<dd><p>Update the inlet interfaces by reading the parameters of the inlet junctions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.EvaporatorCounterflow.update_parameter">
+<span class="sig-name descname"><span class="pre">update_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#EvaporatorCounterflow.update_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.EvaporatorCounterflow.update_parameter" title="Permalink to this definition"></a></dt>
+<dd><p>Function to update a parameter with a string and value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> – string of the parameter to be changed.</p></li>
+<li><p><strong>value</strong> – new value of the parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.IHX">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">IHX</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">UA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#IHX"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.IHX" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#VCSpbx.Component" title="VCSpbx.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a></p>
+<p>Model of the internal (suction-liquid line) heat exchanger. It is a “simple” UA heat transfer model.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.IHX.calc">
+<span class="sig-name descname"><span class="pre">calc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#IHX.calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.IHX.calc" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the condenser model. With the defined “model” function, it runs a scipy.optimize.root algorithm
+to determine the roots of the equation system.
+The result of the root finding is stored and the junctions are updated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.IHX.define_export_variables">
+<span class="sig-name descname"><span class="pre">define_export_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#IHX.define_export_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.IHX.define_export_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Define which variables are to be exported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.IHX.get_function_residual">
+<span class="sig-name descname"><span class="pre">get_function_residual</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#IHX.get_function_residual"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.IHX.get_function_residual" title="Permalink to this definition"></a></dt>
+<dd><p>Return the function residuals of the root finding algorithm by running the model function with the results of the root finding</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Array of function residuals.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.IHX.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#IHX.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.IHX.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>Run further initialization. These tasks cannot be done in __init__(), because there have to be junctions added to the component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.IHX.model">
+<span class="sig-name descname"><span class="pre">model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#IHX.model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.IHX.model" title="Permalink to this definition"></a></dt>
+<dd><p>The model class, that is used to run the root determination algorithm in “calc()”.</p>
+<p>The variables are:</p>
+<p>x[0] = self.TA_out</p>
+<p>x[1] = self.TB_out</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.IHX.set_UA_value">
+<span class="sig-name descname"><span class="pre">set_UA_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">UA</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#IHX.set_UA_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.IHX.set_UA_value" title="Permalink to this definition"></a></dt>
+<dd><p>Set the UA value of the IHX.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>UA</strong> – New UA value.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.IHX.update_inlet_interfaces">
+<span class="sig-name descname"><span class="pre">update_inlet_interfaces</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#IHX.update_inlet_interfaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.IHX.update_inlet_interfaces" title="Permalink to this definition"></a></dt>
+<dd><p>Update the inlet interfaces by reading the parameters of the inlet junctions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.IHX.update_parameter">
+<span class="sig-name descname"><span class="pre">update_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#IHX.update_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.IHX.update_parameter" title="Permalink to this definition"></a></dt>
+<dd><p>Function to update a parameter with a string and value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> – string of the parameter to be changed.</p></li>
+<li><p><strong>value</strong> – new value of the parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.Junction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">Junction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">medium</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upstream_component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upstream_port_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downstream_component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downstream_port_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mdot_init</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_init</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_init</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Junction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Junction" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class that defines the junctions between components. Junctions can be viewed as “high-fidelity” data storages
+and work as the communication interface between the components.
+Junction also are used to define the initial guesses.
+Junction have three defining parameters: massflow, pressure, enthalpy. All other parameters are calculated from these.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Junction.calculate_x">
+<span class="sig-name descname"><span class="pre">calculate_x</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Junction.calculate_x"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Junction.calculate_x" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the quality of the refrigerant. The used definition allows values below 0 and above 1 (contrary to literature).
+The definition is:
+h-h’/(h’’-h’)
+The calculation is not limited to two phase region of the refrigerant, i.e. values below zero indicate subcooled liquid, values above 1 indicate superheated gas.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Junction.get_enthalpy">
+<span class="sig-name descname"><span class="pre">get_enthalpy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Junction.get_enthalpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Junction.get_enthalpy" title="Permalink to this definition"></a></dt>
+<dd><p>Return the enthalpy of the junction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Enthalpy</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Junction.get_entropy">
+<span class="sig-name descname"><span class="pre">get_entropy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Junction.get_entropy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Junction.get_entropy" title="Permalink to this definition"></a></dt>
+<dd><p>Return the entropy of the junction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Entropy</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Junction.get_massflow">
+<span class="sig-name descname"><span class="pre">get_massflow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Junction.get_massflow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Junction.get_massflow" title="Permalink to this definition"></a></dt>
+<dd><p>Return the mass flow of the junction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Mass flow</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Junction.get_plot_string">
+<span class="sig-name descname"><span class="pre">get_plot_string</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Junction.get_plot_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Junction.get_plot_string" title="Permalink to this definition"></a></dt>
+<dd><p>Return the string used to plot with the “plot_cycle()” function of class System.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>text string, that contains the relevant information (T, p, h, mdot).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Junction.get_pressure">
+<span class="sig-name descname"><span class="pre">get_pressure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Junction.get_pressure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Junction.get_pressure" title="Permalink to this definition"></a></dt>
+<dd><p>Return the pressure of the junction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Pressure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Junction.get_quality">
+<span class="sig-name descname"><span class="pre">get_quality</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Junction.get_quality"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Junction.get_quality" title="Permalink to this definition"></a></dt>
+<dd><p>Return the vapor quality of the junction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Quality</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Junction.get_temperature">
+<span class="sig-name descname"><span class="pre">get_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Junction.get_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Junction.get_temperature" title="Permalink to this definition"></a></dt>
+<dd><p>Return the temperature of the junction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Temperature</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Junction.set_values">
+<span class="sig-name descname"><span class="pre">set_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mdot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Junction.set_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Junction.set_values" title="Permalink to this definition"></a></dt>
+<dd><p>Set the value of the junction by giving either one, two or all of the three defining parameters massflow, pressure, enthalpy.
+The function calculates the values for all other parameters and stores it in self.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mdot</strong> – New value for massflow.</p></li>
+<li><p><strong>p</strong> – New value for pressure.</p></li>
+<li><p><strong>h</strong> – New value for enthalpy.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.Sink">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">Sink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mdot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Sink"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Sink" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#VCSpbx.Component" title="VCSpbx.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a></p>
+<p>The sink component is used to terminate medium streams.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Sink.calc">
+<span class="sig-name descname"><span class="pre">calc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Sink.calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Sink.calc" title="Permalink to this definition"></a></dt>
+<dd><p>The “calculation” of the Sink model is simply updating the internal variables with the values of the inlet junction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Sink.define_export_variables">
+<span class="sig-name descname"><span class="pre">define_export_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Sink.define_export_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Sink.define_export_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Define which variables are to be exported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Sink.get_temperature">
+<span class="sig-name descname"><span class="pre">get_temperature</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Sink.get_temperature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Sink.get_temperature" title="Permalink to this definition"></a></dt>
+<dd><p>Return the temprature of the Sink.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Temperature</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.Source">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">Source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mdot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Source" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#VCSpbx.Component" title="VCSpbx.Component"><code class="xref py py-class docutils literal notranslate"><span class="pre">Component</span></code></a></p>
+<p>Source components are components, that allow the definition of boundary conditions. Source components define mass flow, pressure and enthalpy.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Source.calc">
+<span class="sig-name descname"><span class="pre">calc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Source.calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Source.calc" title="Permalink to this definition"></a></dt>
+<dd><p>The “calculation” of the Source object is simply updating the outlet junction of the source with the values of the source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Source.define_export_variables">
+<span class="sig-name descname"><span class="pre">define_export_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Source.define_export_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Source.define_export_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Define which variables are to be exported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Source.set_enthalpy">
+<span class="sig-name descname"><span class="pre">set_enthalpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Source.set_enthalpy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Source.set_enthalpy" title="Permalink to this definition"></a></dt>
+<dd><p>Set the enthalpy of the source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>h</strong> – Enthalpy</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Source.set_mdot">
+<span class="sig-name descname"><span class="pre">set_mdot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mdot</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Source.set_mdot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Source.set_mdot" title="Permalink to this definition"></a></dt>
+<dd><p>Set the mass flow of the source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mdot</strong> – mass flow</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Source.set_pressure">
+<span class="sig-name descname"><span class="pre">set_pressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Source.set_pressure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Source.set_pressure" title="Permalink to this definition"></a></dt>
+<dd><p>Set the pressure of the source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>p</strong> – pressure</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.Source.update_parameter">
+<span class="sig-name descname"><span class="pre">update_parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#Source.update_parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.Source.update_parameter" title="Permalink to this definition"></a></dt>
+<dd><p>Function to update a parameter with a string and value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>param</strong> – string of the parameter to be changed.</p></li>
+<li><p><strong>value</strong> – new value of the parameter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="VCSpbx.System">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">System</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fun_tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#System"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.System" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The system class comprises all components and connections, that are needed to calculate the model.
+It handles also the simulation itself.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.System.add_component">
+<span class="sig-name descname"><span class="pre">add_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#System.add_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.System.add_component" title="Permalink to this definition"></a></dt>
+<dd><p>Add a component to the system. This is done by adding the component object to the list of components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>comp</strong> – component object</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.System.add_junction">
+<span class="sig-name descname"><span class="pre">add_junction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">junc</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#System.add_junction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.System.add_junction" title="Permalink to this definition"></a></dt>
+<dd><p>Add a junction to the system. This is done by adding the junction object to the list of junctions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>junc</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.System.get_export_variables">
+<span class="sig-name descname"><span class="pre">get_export_variables</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#System.get_export_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.System.get_export_variables" title="Permalink to this definition"></a></dt>
+<dd><p>Get the export variables of all components by calling the
+respective “dump_export_variables()” method of every component.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>dict with all export variables</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.System.get_junction_enthalpies">
+<span class="sig-name descname"><span class="pre">get_junction_enthalpies</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#System.get_junction_enthalpies"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.System.get_junction_enthalpies" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.System.initialize">
+<span class="sig-name descname"><span class="pre">initialize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#System.initialize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.System.initialize" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize the components of the system.
+Loops through all components and executes the components methods “check_junctions()” and “initialize()”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.System.parameter_variation">
+<span class="sig-name descname"><span class="pre">parameter_variation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter_handles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">iter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enthalpy_tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#System.parameter_variation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.System.parameter_variation" title="Permalink to this definition"></a></dt>
+<dd><p>THIS IS STILL UNDER DEVELOPMENT!
+Calculate a parameter variation field. Parameters have to be parsed with their object handle functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parameters</strong> – Nested list of parameters</p></li>
+<li><p><strong>parameter_handles</strong> – List of objects</p></li>
+<li><p><strong>function_tolerance</strong> – Tolerance for solving the component models.</p></li>
+<li><p><strong>enthalpy_tolerance</strong> – Tolerance for the enthalpy differences of junctions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.System.plot_cycle">
+<span class="sig-name descname"><span class="pre">plot_cycle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plot_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cycle_img_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#System.plot_cycle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.System.plot_cycle" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the cylce on a given image. The position and values of the plottet text have to be parsed through the plot_dict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>plot_dict</strong> – Dictionary that defines the position of the text fields</p></li>
+<li><p><strong>cycle_img_path</strong> – Path to the image</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.System.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">full_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#System.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.System.run" title="Permalink to this definition"></a></dt>
+<dd><p>Runs the calculation of the class System with the given parameters. This can only be done after initialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>full_output</strong> – Declare whether to generate a full output</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if simulation was successful, False if not</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="VCSpbx.System.update_parameters">
+<span class="sig-name descname"><span class="pre">update_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#System.update_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.System.update_parameters" title="Permalink to this definition"></a></dt>
+<dd><p>Dummy class to update parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="VCSpbx.dh_cond">
+<span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">dh_cond</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">TC</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">medium</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#dh_cond"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.dh_cond" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the enthalpy difference of condensation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>TC</strong> – Temperature of condensation</p></li>
+<li><p><strong>medium</strong> – Medium (CoolProp string)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Enthalpy of condensation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="VCSpbx.lmtd_calc">
+<span class="sig-prename descclassname"><span class="pre">VCSpbx.</span></span><span class="sig-name descname"><span class="pre">lmtd_calc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Thi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tho</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tci</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tco</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/VCSpbx.html#lmtd_calc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#VCSpbx.lmtd_calc" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the mean logarithmic temperature difference. Used for calculating heat flow.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Thi</strong> – Inlet temperature of hot medium</p></li>
+<li><p><strong>Tho</strong> – Outlet temperature of hot medium</p></li>
+<li><p><strong>Tci</strong> – Inlet temperature of cold medium</p></li>
+<li><p><strong>Tco</strong> – Outlet temperature of cold medium</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Mean logarithmic temperature difference</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to VSCstat’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, D. Radler.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

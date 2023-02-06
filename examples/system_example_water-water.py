@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 
 
+
+
 def generate_parameter_list():
     cpr_range = np.array([1000., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
 
