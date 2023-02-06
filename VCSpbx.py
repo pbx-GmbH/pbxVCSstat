@@ -1,7 +1,7 @@
 """
 This is the PBX library to simulate vapor compression cycles for stationary working points.
 """
-
+from datetime import datetime
 
 import numpy as np
 import scipy.optimize
@@ -11,6 +11,7 @@ from CoolProp.CoolProp import PropsSI as CPPSI
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from imageio import imread
+import pandas as pd
 
 
 def lmtd_calc(Thi, Tho, Tci, Tco):
@@ -256,7 +257,7 @@ class System:
 
         return dump_dict
 
-    def parameter_variation(self, parameters: iter, parameter_handles: iter, function_tolerance: float = 0.1, enthalpy_tolerance: float = 1.):
+    def parameter_variation(self, parameters: iter, parameter_handles: iter, function_tolerance: float = 0.1, enthalpy_tolerance: float = 1., save_results = True):
         """
         THIS IS STILL UNDER DEVELOPMENT!
         Calculate a parameter variation field. Parameters have to be parsed with their object handle functions.
@@ -276,7 +277,7 @@ class System:
         for params in tqdm(parameters):
 
             # update the parameters
-            for i, p in tqdm(params):
+            for i, p in enumerate(params):
                 parameter_handles[i](p)
 
             res_dict = dict()
@@ -291,6 +292,15 @@ class System:
 
             self.results_parameter_variation.append(res_dict)
 
+        # convert the list of dictionaries to a pd.DataFrame
+        self.results_parameter_variation = pd.DataFrame(self.results_parameter_variation)
+
+        # save the result, if save_results == True
+        if save_results:
+            now = datetime.now()
+            timestamp = now.strftime('%y%m%d-%H%M%S')
+            filename = timestamp + '_parameter_variation.pkl'
+            self.results_parameter_variation.to_pickle(filename)
 
 class Component:
     """
