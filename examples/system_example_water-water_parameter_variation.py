@@ -102,5 +102,3 @@ cpr.set_speed(1100)
 parameter_values = generate_parameter_list()
 parameter_handles = [srccold.set_enthalpy, srchot.set_enthalpy, cpr.set_speed]
 system.parameter_variation(parameters=parameter_values, parameter_handles=parameter_handles)
-
-
