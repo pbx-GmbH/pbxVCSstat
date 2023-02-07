@@ -144,10 +144,16 @@ for p in p_range:
 
 x_dat = list()
 y_dat = list()
+function_list = ['evapEB1', 'evapEB2', 'shEB1', 'shEB2', 'fA']
 for vals in val_list:
     x_dat.append(vals[0])
-    y_dat.append(evap.model(vals)[0])
+    y_dat.append(evap.model(vals))
+
 x_dat, y_dat = np.array(x_dat), np.array(y_dat)
-plt.plot(x_dat, y_dat)
-plt.plot(x_dat, np.zeros_like(x_dat))
+for i in range(len(function_list)):
+    ax = plt.subplot(2, 3, i+1)
+    ax.plot(x_dat, y_dat[:, i])
+    ax.plot(x_dat, np.zeros_like(x_dat), 'r-')
+    ax.title.set_text(function_list[i])
+
 plt.show()

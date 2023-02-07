@@ -31,12 +31,12 @@ def lmtd_calc(Thi, Tho, Tci, Tco):
     # add exceptions and limit for the calculations
     if dT2 == 0:
         dT2 = 0.01
-    if np.abs(dT1-dT2) < 0.1:
+    if np.abs(dT1-dT2) < 0.00000001:
         LMTD = dT1
     else:
         LMTD = (dT1 - dT2) / np.log(dT1 / dT2)
-    if dT1 < 0:
-        return 0.0
+    # if dT1 < 0:
+    #     return 0.0
 
     # prevent NaN values:
     if np.isnan(LMTD):
@@ -1284,7 +1284,7 @@ class EvaporatorCounterflow(Component):
     The model is based on a two zone evaporator model. (Evaporating, Superheating)
     The model also "contains" an expansion organ, as it is trying to reach a superheat temperature at the outlet.
     """
-    def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, initial_areafractions: iter = None):
+    def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, initial_areafractions: iter = None, lower_pressure_limit=5e4):
         """
         Initialize the evaporator model.
 
@@ -1304,6 +1304,7 @@ class EvaporatorCounterflow(Component):
 
         self.area = area
         self.superheat = superheat
+        self.lower_pressure_limit = lower_pressure_limit
 
         self.T0 = None
         self.TSL2 = None
@@ -1415,7 +1416,7 @@ class EvaporatorCounterflow(Component):
         self.mSL = self.junctions['inlet_B'].get_massflow()
         self.T_SLi = self.junctions['inlet_B'].get_temperature()
 
-    def model(self, x):
+    def model(self, x, recursive_call=False):
         """
         The model class, that is used to run the root determination algorithm in "calc()".\n
         The variables are:\n
@@ -1433,6 +1434,22 @@ class EvaporatorCounterflow(Component):
         # x[2] = self.TSLmid
         # x[3] = self.xE1
         # x[4] = self.xE2
+
+        # special limit to protect agains negativ or unrealisticly low pressures
+        if x[0] < self.lower_pressure_limit:
+            alt_x_low = np.zeros(5)
+            alt_x_low[0] = self.lower_pressure_limit
+            alt_x_low[1:] = x[1:]
+            res_low = self.model(alt_x_low, recursive_call=True)
+
+            alt_x_high = np.zeros(5)
+            alt_x_high[0] = self.lower_pressure_limit + 1
+            alt_x_high[1:] = x[1:]
+            res_high = self.model(alt_x_high, recursive_call=True)
+
+            d_res = res_low - res_high
+            return d_res*(self.lower_pressure_limit - x[0]) + res_low
+
 
         cpSL = CPPSI('C', 'T', (self.T_SLi + x[1]) / 2, 'P', 1e5, self.SL)  # heat capacity of secondary liquid
 
