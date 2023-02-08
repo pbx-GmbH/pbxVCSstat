@@ -18,15 +18,21 @@ def generate_parameter_list():
     # T_SL_cold_in_range = np.arange(-10, -6, 1) + 273.15
     h_SL_cold_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_cold_in_range])
 
+    mdot_SL_cold_range = np.arange(.35, .149, -.05)
+    mdot_SL_hot_range = np.arange(.35, .149, -.05)
+
     return_list = list()
     skip_flag = False
-    for h_SL_cold in h_SL_cold_in_range:
-        for h_SL_hot in h_SL_hot_in_range:
-            for cpr_speed in cpr_range:
-                return_list.append([h_SL_cold, h_SL_hot, cpr_speed])
-            cpr_range = cpr_range[::-1]
-        h_SL_hot_in_range = h_SL_hot_in_range[::-1]
-
+    for mdot_SL_cold in mdot_SL_cold_range:
+        for h_SL_cold in h_SL_cold_in_range:
+            for mdot_SL_hot in mdot_SL_hot_range:
+                for h_SL_hot in h_SL_hot_in_range:
+                    for cpr_speed in cpr_range:
+                        return_list.append([h_SL_cold, h_SL_hot, cpr_speed, mdot_SL_hot, mdot_SL_cold])
+                    cpr_range = cpr_range[::-1]
+                h_SL_hot_in_range = h_SL_hot_in_range[::-1]
+            mdot_SL_hot_range = mdot_SL_hot_range[::-1]
+        h_SL_cold_in_range = h_SL_cold_in_range[::-1]
     return return_list
 
 
@@ -97,6 +103,9 @@ cond_snkhot = vcs.Junction(id='cond_snkhot', system=system, medium=SL, upstream_
 system.initialize()
 system.run(full_output=True)
 
+# srchot.set_mdot(.2)
+# system.run(full_output=True)
+
 parameter_values = generate_parameter_list()
-parameter_handles = [srccold.set_enthalpy, srchot.set_enthalpy, cpr.set_speed]
+parameter_handles = [srccold.set_enthalpy, srchot.set_enthalpy, cpr.set_speed, srchot.set_mdot, srccold.set_mdot]
 system.parameter_variation(parameters=parameter_values, parameter_handles=parameter_handles)
