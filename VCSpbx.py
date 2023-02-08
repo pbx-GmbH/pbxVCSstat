@@ -31,12 +31,12 @@ def lmtd_calc(Thi, Tho, Tci, Tco):
     # add exceptions and limit for the calculations
     if dT2 == 0:
         dT2 = 0.01
-    if np.abs(dT1-dT2) < 0.1:
+    if np.abs(dT1-dT2) < 0.00000001:
         LMTD = dT1
     else:
         LMTD = (dT1 - dT2) / np.log(dT1 / dT2)
-    if dT1 < 0:
-        return 0.0
+    # if dT1 < 0:
+    #     return 0.0
 
     # prevent NaN values:
     if np.isnan(LMTD):
@@ -252,9 +252,14 @@ class System:
         :return: dict with all export variables
         """
         dump_dict = dict()
+
+        # get export variables from components
         for comp in self.components:
             dump_dict.update(comp.dump_export_variables())
 
+        # get junction variables
+        for j in self.junctions:
+            dump_dict.update(j.get_value_dict())
         return dump_dict
 
     def parameter_variation(self, parameters: iter, parameter_handles: iter, function_tolerance: float = 0.1, enthalpy_tolerance: float = 1., save_results = True):
@@ -284,12 +289,26 @@ class System:
 
             # try to calculate the system with the new parameter setting and store the result
             try:
-                self.run()
+                converged = self.run()
                 res_dict = self.get_export_variables()
-                res_dict['converged'] = True
-            except:
-                res_dict['converged'] = False
 
+                res_dict['converged'] = converged
+            except:
+                for i in range(11):
+                    adapted_params = old_params + (np.array(params)-old_params) * (i) * 0.1
+                    try:
+                        for i, p in enumerate(adapted_params):
+                            parameter_handles[i](p)
+                        converged = self.run()
+                    except:
+                        res_dict['converged'] = False
+                        break
+                res_dict['converged'] = True
+
+            # store parameters for next loop
+            old_params = np.array(params)
+
+            # append result into result list
             self.results_parameter_variation.append(res_dict)
 
         # convert the list of dictionaries to a pd.DataFrame
@@ -558,6 +577,12 @@ class Junction:
             mdot=self.get_massflow() * 1e3)
         return text
 
+    def get_value_dict(self):
+        ret_dict = dict()
+        ret_dict[self.id+'.p'] = self.get_pressure()
+        ret_dict[self.id+'.h'] = self.get_enthalpy()
+        ret_dict[self.id+'.mdot'] = self.get_massflow()
+        return ret_dict
 
 class CompressorEfficiency(Component):
     """
@@ -846,7 +871,7 @@ class CondenserCounterflow(Component):
     Condenser model for counter flow characteristic.
     The model is based on a three zone condeser model. (Desuperheating, Condensing, Subcooling)
     """
-    def __init__(self, id: str, system: object, k: iter, area: float, subcooling: float, initial_areafractions: iter = None):
+    def __init__(self, id: str, system: object, k: iter, area: float, subcooling: float, initial_areafractions: iter = None, upper_pressure_limit = 26e5):
         """
         Initialize the condenser model.
 
@@ -867,7 +892,7 @@ class CondenserCounterflow(Component):
         self.area = area
         self.dTSC = subcooling
         # self.parameters = {'UA': self.UA, 'subcooling': self.dTSC}
-
+        self.upper_pressure_limit = upper_pressure_limit
 
         self.TC = None
         self.T_SL1 = None
@@ -937,7 +962,7 @@ class CondenserCounterflow(Component):
         }
         return
 
-    def model(self, x):
+    def model(self, x, recursive_call = False):
         """
         The model class, that is used to run the root determination algorithm in "calc()".\n
         The variables are:\n
@@ -952,6 +977,21 @@ class CondenserCounterflow(Component):
         :param x: Array of free variables.
         :return: The result of the equation system.
         """
+
+        # special limit to protect against negative or unrealistically low pressures
+        if x[0] > self.upper_pressure_limit:
+            alt_x_low = np.zeros(7)
+            alt_x_low[0] = self.upper_pressure_limit - 1
+            alt_x_low[1:] = x[1:]
+            res_low = self.model(alt_x_low, recursive_call=True)
+
+            alt_x_high = np.zeros(7)
+            alt_x_high[0] = self.upper_pressure_limit
+            alt_x_high[1:] = x[1:]
+            res_high = self.model(alt_x_high, recursive_call=True)
+
+            d_res = res_low - res_high
+            return d_res*(self.upper_pressure_limit - x[0]) + res_low
 
         # Calculate refrigerant temperatures
         self.ref_HEOS.update(CoolProp.PQ_INPUTS, x[0], 1)
@@ -1272,7 +1312,7 @@ class EvaporatorCounterflow(Component):
     The model is based on a two zone evaporator model. (Evaporating, Superheating)
     The model also "contains" an expansion organ, as it is trying to reach a superheat temperature at the outlet.
     """
-    def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, initial_areafractions: iter = None):
+    def __init__(self, id: str, system: object, k: iter, area: float, superheat: float, initial_areafractions: iter = None, lower_pressure_limit=5e4):
         """
         Initialize the evaporator model.
 
@@ -1292,6 +1332,7 @@ class EvaporatorCounterflow(Component):
 
         self.area = area
         self.superheat = superheat
+        self.lower_pressure_limit = lower_pressure_limit
 
         self.T0 = None
         self.TSL2 = None
@@ -1403,7 +1444,7 @@ class EvaporatorCounterflow(Component):
         self.mSL = self.junctions['inlet_B'].get_massflow()
         self.T_SLi = self.junctions['inlet_B'].get_temperature()
 
-    def model(self, x):
+    def model(self, x, recursive_call=False):
         """
         The model class, that is used to run the root determination algorithm in "calc()".\n
         The variables are:\n
@@ -1421,6 +1462,22 @@ class EvaporatorCounterflow(Component):
         # x[2] = self.TSLmid
         # x[3] = self.xE1
         # x[4] = self.xE2
+
+        # special limit to protect against negative or unrealistically low pressures
+        if x[0] < self.lower_pressure_limit:
+            alt_x_low = np.zeros(5)
+            alt_x_low[0] = self.lower_pressure_limit
+            alt_x_low[1:] = x[1:]
+            res_low = self.model(alt_x_low, recursive_call=True)
+
+            alt_x_high = np.zeros(5)
+            alt_x_high[0] = self.lower_pressure_limit + 1
+            alt_x_high[1:] = x[1:]
+            res_high = self.model(alt_x_high, recursive_call=True)
+
+            d_res = res_low - res_high
+            return d_res*(self.lower_pressure_limit - x[0]) + res_low
+
 
         cpSL = CPPSI('C', 'T', (self.T_SLi + x[1]) / 2, 'P', 1e5, self.SL)  # heat capacity of secondary liquid
 

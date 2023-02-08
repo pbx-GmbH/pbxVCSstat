@@ -3,29 +3,36 @@ from CoolProp.CoolProp import PropsSI as CPPSI
 import numpy as np
 import pandas as pd
 import pickle
+import matplotlib.pyplot as plt
 
 
 def generate_parameter_list():
     cpr_range = np.array([1000., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
     # cpr_range = np.array([1000., 1250., 1500., 1750., 2000.])
 
-    T_SL_hot_in_range = np.arange(20, 50.1, 1) + 273.15
+    T_SL_hot_in_range = np.arange(-10, 15.1, 1) + 273.15
     # T_SL_hot_in_range = np.arange(20, 22.1, 1) + 273.15
     h_SL_hot_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_hot_in_range])
 
-    T_SL_cold_in_range = np.arange(-10, 10, 1) + 273.15
+    T_SL_cold_in_range = np.arange(-32, -10, 1) + 273.15
     # T_SL_cold_in_range = np.arange(-10, -6, 1) + 273.15
     h_SL_cold_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_cold_in_range])
 
+    mdot_SL_cold_range = np.arange(.35, .149, -.05)
+    mdot_SL_hot_range = np.arange(.35, .149, -.05)
+
     return_list = list()
     skip_flag = False
-    for h_SL_cold in h_SL_cold_in_range:
-        for h_SL_hot in h_SL_hot_in_range:
-            for cpr_speed in cpr_range:
-                return_list.append([h_SL_cold, h_SL_hot, cpr_speed])
-            cpr_range = cpr_range[::-1]
-        h_SL_hot_in_range = h_SL_hot_in_range[::-1]
-
+    for mdot_SL_cold in mdot_SL_cold_range:
+        for h_SL_cold in h_SL_cold_in_range:
+            for mdot_SL_hot in mdot_SL_hot_range:
+                for h_SL_hot in h_SL_hot_in_range:
+                    for cpr_speed in cpr_range:
+                        return_list.append([h_SL_cold, h_SL_hot, cpr_speed, mdot_SL_hot, mdot_SL_cold])
+                    cpr_range = cpr_range[::-1]
+                h_SL_hot_in_range = h_SL_hot_in_range[::-1]
+            mdot_SL_hot_range = mdot_SL_hot_range[::-1]
+        h_SL_cold_in_range = h_SL_cold_in_range[::-1]
     return return_list
 
 
@@ -38,15 +45,15 @@ SL = 'INCOMP::MEG[0.5]'
 superheat = 4.0  # K
 p_SL = 1e5  # Pa
 
-k_cond = [380., 1500., 380.]
+k_cond = [300., 800., 300.]
 area_cond = 0.565
 
 k_evap = [500., 100.]
 area_evap = 1.
 
 # boundary conditions
-T_SL_cold_in = -10.0 + 273.15  # K
-T_SL_hot_in = 30.0 + 273.15  # K
+T_SL_cold_in = -32.0 + 273.15  # K
+T_SL_hot_in = -10.0 + 273.15  # K
 h_SL_cold_in = CPPSI('H', 'T', T_SL_cold_in, 'P', p_SL, SL)
 h_SL_hot_in = CPPSI('H', 'T', T_SL_hot_in, 'P', p_SL, SL)
 mdot_SL_cold = 0.35  # kg/s
@@ -54,7 +61,7 @@ mdot_SL_hot = 0.35  # kg/s
 
 # initial guesses
 mdot_ref_init = 0.0025
-pc_init = 11e5
+pc_init = 4.3e5
 Tc_init = CPPSI('T', 'P', pc_init, 'Q', 0, ref)
 h2_init = CPPSI('H', 'P', pc_init, 'T', 70+273.15, ref)
 h3_init = CPPSI('H', 'P', pc_init, 'Q', 0, ref)
@@ -64,7 +71,7 @@ T0_init = CPPSI('T', 'P', p0_init, 'Q', 1, ref)
 h5_init = CPPSI('H', 'P', p0_init, 'T', T0_init+superheat, ref)
 h1_init = CPPSI('H', 'P', p0_init, 'T', T0_init+superheat+2., ref)
 
-initial_areafraction_cond = [0.2, 0.6, 0.2]
+initial_areafraction_cond = [0.09, 0.9, 0.01]
 initial_areafraction_evap = [0.2, 0.8]
 
 # Instantiate components
@@ -96,11 +103,9 @@ cond_snkhot = vcs.Junction(id='cond_snkhot', system=system, medium=SL, upstream_
 system.initialize()
 system.run(full_output=True)
 
-cpr.set_speed(1100)
+# srchot.set_mdot(.2)
 # system.run(full_output=True)
-#
+
 parameter_values = generate_parameter_list()
-parameter_handles = [srccold.set_enthalpy, srchot.set_enthalpy, cpr.set_speed]
+parameter_handles = [srccold.set_enthalpy, srchot.set_enthalpy, cpr.set_speed, srchot.set_mdot, srccold.set_mdot]
 system.parameter_variation(parameters=parameter_values, parameter_handles=parameter_handles)
-
-
