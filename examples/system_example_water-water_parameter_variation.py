@@ -10,7 +10,7 @@ def generate_parameter_list():
     cpr_range = np.array([1000., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
     # cpr_range = np.array([1000., 1250., 1500., 1750., 2000.])
 
-    T_SL_hot_in_range = np.arange(-10, 30.1, 1) + 273.15
+    T_SL_hot_in_range = np.arange(-10, 15.1, 1) + 273.15
     # T_SL_hot_in_range = np.arange(20, 22.1, 1) + 273.15
     h_SL_hot_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_hot_in_range])
 

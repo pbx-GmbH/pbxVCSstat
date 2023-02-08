@@ -289,13 +289,26 @@ class System:
 
             # try to calculate the system with the new parameter setting and store the result
             try:
-                self.run()
+                converged = self.run()
                 res_dict = self.get_export_variables()
 
-                res_dict['converged'] = True
+                res_dict['converged'] = converged
             except:
-                res_dict['converged'] = False
+                for i in range(11):
+                    adapted_params = old_params + (np.array(params)-old_params) * (i) * 0.1
+                    try:
+                        for i, p in enumerate(adapted_params):
+                            parameter_handles[i](p)
+                        converged = self.run()
+                    except:
+                        res_dict['converged'] = False
+                        break
+                res_dict['converged'] = True
 
+            # store parameters for next loop
+            old_params = np.array(params)
+
+            # append result into result list
             self.results_parameter_variation.append(res_dict)
 
         # convert the list of dictionaries to a pd.DataFrame

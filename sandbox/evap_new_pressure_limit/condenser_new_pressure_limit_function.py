@@ -10,7 +10,7 @@ def generate_parameter_list():
     cpr_range = np.array([1000., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
     # cpr_range = np.array([1000., 1250., 1500., 1750., 2000.])
 
-    T_SL_hot_in_range = np.arange(20, 50.1, 1) + 273.15
+    T_SL_hot_in_range = np.arange(20, 50.1, 1.) + 273.15
     # T_SL_hot_in_range = np.arange(20, 22.1, 1) + 273.15
     h_SL_hot_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_hot_in_range])
 
@@ -37,6 +37,7 @@ cpr_stroke = 33.0e-6
 ref = 'R290'
 SL = 'INCOMP::MEG[0.5]'
 superheat = 4.0  # K
+subcooling = 0.5  # K
 p_SL = 1e5  # Pa
 
 k_cond = [300., 800., 300.]
@@ -71,7 +72,7 @@ initial_areafraction_evap = [0.2, 0.8]
 # Instantiate components
 system = vcs.System(id='system', tolerance=1., fun_tol=1.)
 cpr = vcs.CompressorEfficiency(id='cpr', system=system, etaS=0.645, etaV=0.82, etaEL=0.775, stroke=cpr_stroke, speed=cpr_speed)
-cond = vcs.CondenserCounterflow(id='cond', system=system, k=k_cond, area=area_cond, subcooling=0.1, initial_areafractions=initial_areafraction_cond)
+cond = vcs.CondenserCounterflow(id='cond', system=system, k=k_cond, area=area_cond, subcooling=subcooling, initial_areafractions=initial_areafraction_cond)
 ihx = vcs.IHX(id='ihx', system=system, UA=2.3)
 evap = vcs.EvaporatorCounterflow(id='evap', system=system, k=k_evap, area=area_evap, superheat=superheat, initial_areafractions=initial_areafraction_evap)
 
