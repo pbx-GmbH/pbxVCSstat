@@ -858,7 +858,7 @@ class CondenserCounterflow(Component):
     Condenser model for counter flow characteristic.
     The model is based on a three zone condeser model. (Desuperheating, Condensing, Subcooling)
     """
-    def __init__(self, id: str, system: object, k: iter, area: float, subcooling: float, initial_areafractions: iter = None):
+    def __init__(self, id: str, system: object, k: iter, area: float, subcooling: float, initial_areafractions: iter = None, upper_pressure_limit = 26e5):
         """
         Initialize the condenser model.
 
@@ -879,7 +879,7 @@ class CondenserCounterflow(Component):
         self.area = area
         self.dTSC = subcooling
         # self.parameters = {'UA': self.UA, 'subcooling': self.dTSC}
-
+        self.upper_pressure_limit = upper_pressure_limit
 
         self.TC = None
         self.T_SL1 = None
@@ -949,7 +949,7 @@ class CondenserCounterflow(Component):
         }
         return
 
-    def model(self, x):
+    def model(self, x, recursive_call = False):
         """
         The model class, that is used to run the root determination algorithm in "calc()".\n
         The variables are:\n
@@ -964,6 +964,21 @@ class CondenserCounterflow(Component):
         :param x: Array of free variables.
         :return: The result of the equation system.
         """
+
+        # special limit to protect against negative or unrealistically low pressures
+        if x[0] > self.upper_pressure_limit:
+            alt_x_low = np.zeros(7)
+            alt_x_low[0] = self.upper_pressure_limit - 1
+            alt_x_low[1:] = x[1:]
+            res_low = self.model(alt_x_low, recursive_call=True)
+
+            alt_x_high = np.zeros(7)
+            alt_x_high[0] = self.upper_pressure_limit
+            alt_x_high[1:] = x[1:]
+            res_high = self.model(alt_x_high, recursive_call=True)
+
+            d_res = res_low - res_high
+            return d_res*(self.upper_pressure_limit - x[0]) + res_low
 
         # Calculate refrigerant temperatures
         self.ref_HEOS.update(CoolProp.PQ_INPUTS, x[0], 1)
@@ -1435,7 +1450,7 @@ class EvaporatorCounterflow(Component):
         # x[3] = self.xE1
         # x[4] = self.xE2
 
-        # special limit to protect agains negativ or unrealisticly low pressures
+        # special limit to protect against negative or unrealistically low pressures
         if x[0] < self.lower_pressure_limit:
             alt_x_low = np.zeros(5)
             alt_x_low[0] = self.lower_pressure_limit

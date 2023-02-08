@@ -10,11 +10,11 @@ def generate_parameter_list():
     cpr_range = np.array([1000., 1250., 1500., 1750., 2000., 2500., 3000., 4000., 5000., 6000., 7000., 8000.])
     # cpr_range = np.array([1000., 1250., 1500., 1750., 2000.])
 
-    T_SL_hot_in_range = np.arange(-10, 30.1, 1) + 273.15
+    T_SL_hot_in_range = np.arange(20, 50.1, 1) + 273.15
     # T_SL_hot_in_range = np.arange(20, 22.1, 1) + 273.15
     h_SL_hot_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_hot_in_range])
 
-    T_SL_cold_in_range = np.arange(-32, -10, 1) + 273.15
+    T_SL_cold_in_range = np.arange(-10, 10, 1) + 273.15
     # T_SL_cold_in_range = np.arange(-10, -6, 1) + 273.15
     h_SL_cold_in_range = np.array([CPPSI('H', 'T', t, 'P', 1e5, 'INCOMP::MEG[0.5]') for t in T_SL_cold_in_range])
 
@@ -32,7 +32,7 @@ def generate_parameter_list():
 
 # parameter setting
 
-cpr_speed = 1000.0  # rpm
+cpr_speed = 2000.0  # rpm
 cpr_stroke = 33.0e-6
 ref = 'R290'
 SL = 'INCOMP::MEG[0.5]'
@@ -46,16 +46,16 @@ k_evap = [500., 100.]
 area_evap = 1.
 
 # boundary conditions
-T_SL_cold_in = -32.0 + 273.15  # K
-T_SL_hot_in = -10.0 + 273.15  # K
+T_SL_cold_in = -10.0 + 273.15  # K
+T_SL_hot_in = 30.0 + 273.15  # K
 h_SL_cold_in = CPPSI('H', 'T', T_SL_cold_in, 'P', p_SL, SL)
 h_SL_hot_in = CPPSI('H', 'T', T_SL_hot_in, 'P', p_SL, SL)
 mdot_SL_cold = 0.35  # kg/s
 mdot_SL_hot = 0.35  # kg/s
 
 # initial guesses
-mdot_ref_init = 0.0025
-pc_init = 4.3e5
+mdot_ref_init = 0.01
+pc_init = 12e5
 Tc_init = CPPSI('T', 'P', pc_init, 'Q', 0, ref)
 h2_init = CPPSI('H', 'P', pc_init, 'T', 70+273.15, ref)
 h3_init = CPPSI('H', 'P', pc_init, 'Q', 0, ref)
@@ -97,6 +97,66 @@ cond_snkhot = vcs.Junction(id='cond_snkhot', system=system, medium=SL, upstream_
 system.initialize()
 system.run(full_output=True)
 
-parameter_values = generate_parameter_list()
-parameter_handles = [srccold.set_enthalpy, srchot.set_enthalpy, cpr.set_speed]
-system.parameter_variation(parameters=parameter_values, parameter_handles=parameter_handles)
+## T_SL_in_hot approximation
+# T_hot_in_target = -5 + 273.15 -.001
+# T_range = np.arange(T_SL_hot_in, T_hot_in_target, -1)
+# for t in T_range:
+#     system.run()
+#     h = CPPSI('H', 'T', t, 'P', 1e5, SL)
+#     srchot.set_enthalpy(h)
+#     print(t)
+#
+# system.run(full_output=True)
+#
+# T_SL_in_cold approximation
+# T_cold_in_target = -35 + 273.15 -.001
+# T_range = np.arange(T_SL_hot_in, T_cold_in_target, -1)
+# for t in T_range:
+#     system.run()
+#     h = CPPSI('H', 'T', t, 'P', 1e5, SL)
+#     srccold.set_enthalpy(h)
+#     print(t)
+#
+# system.run(full_output=True)
+
+
+# cpr.set_speed(1100)
+# system.run(full_output=True)
+#
+# parameter_values = generate_parameter_list()
+# parameter_handles = [srccold.set_enthalpy, srchot.set_enthalpy, cpr.set_speed]
+# system.parameter_variation(parameters=parameter_values, parameter_handles=parameter_handles)
+
+# plot the root
+p_range = np.arange(8e5, 42.1e5, 1e5)
+x = np.zeros(7)
+x[0] = cond.p
+x[1] = cond.T_SL1
+x[2] = cond.T_SL2
+x[3] = cond.T_SLo
+x[4] = cond.f_dsh
+x[5] = cond.f_cond
+x[6] = cond.f_sc
+
+val_list = list()
+for p in p_range:
+    vec = np.zeros(7)
+    vec[0] = p
+    vec[1:] = x[1:].copy()
+    val_list.append(vec)
+
+x_dat = list()
+y_dat = list()
+function_list = ['dshEB1', 'dshEB2', 'condhEB1', 'condEB2','scEB1', 'scEB2', 'fA']
+for vals in val_list:
+    x_dat.append(vals[0])
+    y_dat.append(cond.model(vals))
+
+x_dat, y_dat = np.array(x_dat), np.array(y_dat)
+for i in range(len(function_list)):
+    ax = plt.subplot(2, 4, i+1)
+    ax.plot(x_dat, y_dat[:, i])
+    ax.plot(x_dat, np.zeros_like(x_dat), 'r-')
+    ax.title.set_text(function_list[i])
+
+plt.show()
