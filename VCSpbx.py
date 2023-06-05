@@ -584,6 +584,10 @@ class Junction:
         ret_dict[self.id+'.mdot'] = self.get_massflow()
         return ret_dict
 
+
+    def get_medium(self):
+        return self.medium
+
 class CompressorEfficiency(Component):
     """
     Compressor model based on isentropic and volumetric efficiency. Also a parameter for electric efficiency is added.
