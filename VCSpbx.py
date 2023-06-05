@@ -586,6 +586,11 @@ class Junction:
 
 
     def get_medium(self):
+        """
+        Returns the string for the medium.
+
+        :return:
+        """
         return self.medium
 
 class CompressorEfficiency(Component):
