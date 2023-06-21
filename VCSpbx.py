@@ -59,6 +59,9 @@ def dh_cond(TC, medium):
         dh = CPPSI("H", "T", TC, "Q", 1, medium) - CPPSI("H", "T", TC, "Q", 0, medium)
     return dh
 
+def calc_thirdorder_polynomial(x, y, p):
+    xy_array = np.array([1, x, y, x*x, x*y, y*y, x*x*x, x*x*y, x*y*y, y*y*y])
+    return p * xy_array.transpose()
 
 class System:
     """
@@ -744,13 +747,16 @@ class Compressor_MasterfluxAlpine(Component):
         self.speed = speed
         self.working_parameters = np.zeros(9)
         self.k = None
+        self.Pel = None
+        self.mdot = None
+
 
         # compressor parameters
         self.stroke = 18.243 * 2 * 1.0E-6  # in m3
         self.RPM_min = 1800
         self.RPM_max = 6500
         # model parameters
-        self.params_power = [[2.61351503160446E-05, 1.94406507897762E-02, -2.61535874512516E+01],
+        self.params_power = np.array([[2.61351503160446E-05, 1.94406507897762E-02, -2.61535874512516E+01],
                              [2.40596664347618E-06, 2.28548550415022E-02, 2.37947319860790E+01],
                              [-2.51946735329226E-06, 1.20324211464900E-02, 1.47601128237257E+00],
                              [3.77426108757315E-07, -1.86116134522515E-02, -7.44043380970024E+00],
@@ -759,9 +765,9 @@ class Compressor_MasterfluxAlpine(Component):
                              [6.42191991452190E-08, 3.88134369872757E-04, 1.05210351088838E+00],
                              [-5.62121723586466E-08, 3.77645038443793E-04, -5.84602225289624E-01],
                              [1.50132257118843E-08, -2.15098941622777E-04, 1.14346993354944E-01],
-                             [-2.87991861855384E-09, 2.09821522655107E-05, -4.01657493530679E-03]]
+                             [-2.87991861855384E-09, 2.09821522655107E-05, -4.01657493530679E-03]])
 
-        self.params_massflow_ref = [[-8.55032307735981E-08, 9.31458288703003E-04, -7.18968943227166E-01],
+        self.params_massflow_ref = np.array([[-8.55032307735981E-08, 9.31458288703003E-04, -7.18968943227166E-01],
                                     [-2.66519043390434E-08, 4.01975426099445E-03, 1.58505108662075E-01],
                                     [2.09693655630869E-08, -1.67674555442193E-04, 1.03408907108912E-01],
                                     [-6.98430897118900E-09, 2.09188216353218E-05, -1.33471995402642E-01],
@@ -770,12 +776,12 @@ class Compressor_MasterfluxAlpine(Component):
                                     [9.19654936062527E-10, -6.35440625748187E-06, 1.09857416127085E-02],
                                     [-3.93026479716597E-10, 4.25576286265211E-06, -3.25019576352321E-03],
                                     [4.50775172771900E-11, -4.56502284807732E-07, -2.66928981585851E-05],
-                                    [1.80160704721233E-11, -1.35225553553278E-07, 1.54910933414018E-04]]
+                                    [1.80160704721233E-11, -1.35225553553278E-07, 1.54910933414018E-04]])
 
-        self.params_massflow_tsuction = [2.04474579550577E-01, -3.36332402905712E+00, 2.46383673994489E+01,
-                                         -6.31433708944579E+01]
+        self.params_massflow_tsuction = np.array([2.04474579550577E-01, -3.36332402905712E+00, 2.46383673994489E+01,
+                                         -6.31433708944579E+01])
 
-        self.params_temp_compression = [[5.27144801489871E-10, -7.49337807305126E-06, 1.25452516257171E+00],
+        self.params_temp_compression = np.array([[5.27144801489871E-10, -7.49337807305126E-06, 1.25452516257171E+00],
                                         [-4.81045877105711E-10, 2.87768468434160E-06, -7.43631234653976E-03],
                                         [-7.09921866227119E-11, 8.67839961547325E-07, -4.66651696490209E-02],
                                         [1.52462983544176E-11, 6.45972863611150E-08, -3.13206792672621E-03],
@@ -784,7 +790,7 @@ class Compressor_MasterfluxAlpine(Component):
                                         [5.62238500275363E-12, -8.64332447258515E-08, 5.56253904617871E-04],
                                         [-6.50054194399207E-12, 7.46878573462099E-08, -3.01167165951467E-04],
                                         [3.87185689965077E-13, -8.53951419506538E-09, 2.24475779742436E-05],
-                                        [-1.15461950356974E-13, 1.48322587695103E-09, -6.08367955088717E-05]]
+                                        [-1.15461950356974E-13, 1.48322587695103E-09, -6.08367955088717E-05]])
 
     def initialize(self):
         """
@@ -813,37 +819,25 @@ class Compressor_MasterfluxAlpine(Component):
         cv = CPPSI('CVMASS', 'P', self.pin, 'T', self.Tin, self.medium)
         self.k = cp/cv
 
-        # update efficiencies
-        self.update_efficiencies()
+        self.speed_array = np.array([self.speed**2, self.speed, 1])
+        self.calc_power()
+        self.calc_massflow_rate()
 
-        # calculate electric power
-        Pel_ideal = self.stroke * self.speed / 30 * np.pi * (self.pout * self.p_ratio ** (-1/self.k) - self.pin)
-        self.Pel = Pel_ideal * self.etaP
 
-        # calculate mass flow
-        mdot_ideal = self.rho_in * self.stroke * (self.speed / 60)
-        mdot = mdot_ideal * self.etaV
+    def calc_power(self):
+        power_params_reduced = np.dot(self.params_power, self.speed_array)
+        self.Pel = calc_thirdorder_polynomial(self.pin, self.pout, power_params_reduced)
 
-        # calculate enthalpies
-        hout_ideal = hin + self.Pel / mdot
-        Tout_ideal = CPPSI("T", "P", self.pout, "H", hout_ideal, self.medium)
-        Tout = Tout_ideal + self.deltaTD
-        hout = CPPSI("H", "P", self.pout, "T", Tout, self.medium)
+    def calc_massflow_rate(self):
+        massflow_params_reduced = np.dot(self.params_massflow_ref, self.speed_array)
+        massflow_ref = calc_thirdorder_polynomial(self.pin, self.pout, massflow_params_reduced)
+        self.mdot = ((self.params_massflow_tsuction[0] * self.pin**3 + self.params_massflow_tsuction[1] * self.pin**2 + self.params_massflow_tsuction[2] * self.pin + 308.15)/(self.Tin))*massflow_ref
 
-        self.junctions['outlet_A'].set_values(mdot=mdot, h=hout)
-
-    def update_efficiencies(self):
-        """
-        The efficiency factors for the model are calculated.
-        :return:
-        """
-        # parameters for compressor model
-        speed_array = np.array([self.speed**2, self.speed, 1])
-        self.working_parameters = np.dot(self.model_params, speed_array)
-        pout_bar = self.pout * 1.E-5
-        self.etaP = 1 / (self.working_parameters[0] * pout_bar**2 + self.working_parameters[1] * pout_bar + self.working_parameters[2])
-        self.etaV = 1 / (self.working_parameters[3] * self.p_ratio**2 + self.working_parameters[4] * self.p_ratio + self.working_parameters[5])
-        self.deltaTD = self.working_parameters[6] * self.p_ratio**2 + self.working_parameters[7] * self.p_ratio + self.working_parameters[8]
+    def calc_Tout(self):
+        td_ideal = self.Tin * self.p_ratio ** (1 - 1 / self.k)
+        td_params_reduced = np.dot(self.params_temp_compression, self.speed_array)
+        td_multiplier = calc_thirdorder_polynomial(self.pin, self.pout, td_params_reduced)
+        self.Tout = td_ideal/td_multiplier
 
     def set_speed(self, speed):
         """
@@ -917,6 +911,7 @@ class Compressor_MasterfluxAlpine(Component):
             'Pel': self.Pel
         }
         return
+
 
 class Condenser(Component):
     """
