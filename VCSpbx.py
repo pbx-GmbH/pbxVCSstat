@@ -60,8 +60,10 @@ def dh_cond(TC, medium):
     return dh
 
 def calc_thirdorder_polynomial(x, y, p):
+    x = x * 1.0e-5
+    y = y * 1.0e-5
     xy_array = np.array([1, x, y, x*x, x*y, y*y, x*x*x, x*x*y, x*y*y, y*y*y])
-    return p * xy_array.transpose()
+    return np.dot(p, xy_array.transpose())
 
 class System:
     """
@@ -819,25 +821,32 @@ class Compressor_MasterfluxAlpine(Component):
         cv = CPPSI('CVMASS', 'P', self.pin, 'T', self.Tin, self.medium)
         self.k = cp/cv
 
+        # calculate the model
         self.speed_array = np.array([self.speed**2, self.speed, 1])
         self.calc_power()
         self.calc_massflow_rate()
+        self.calc_hout()
 
+        # update the outlet junction
+        self.junctions['outlet_A'].set_values(mdot=self.mdot, h=self.hout)
 
     def calc_power(self):
         power_params_reduced = np.dot(self.params_power, self.speed_array)
         self.Pel = calc_thirdorder_polynomial(self.pin, self.pout, power_params_reduced)
 
     def calc_massflow_rate(self):
+        pin = self.pin * 1.0e-5
         massflow_params_reduced = np.dot(self.params_massflow_ref, self.speed_array)
         massflow_ref = calc_thirdorder_polynomial(self.pin, self.pout, massflow_params_reduced)
-        self.mdot = ((self.params_massflow_tsuction[0] * self.pin**3 + self.params_massflow_tsuction[1] * self.pin**2 + self.params_massflow_tsuction[2] * self.pin + 308.15)/(self.Tin))*massflow_ref
+        massflow = ((self.params_massflow_tsuction[0] * pin**3 + self.params_massflow_tsuction[1] * pin**2 + self.params_massflow_tsuction[2] * pin + self.params_massflow_tsuction[3] + 308.15)/(self.Tin))*massflow_ref
+        self.mdot = massflow / 3600
 
-    def calc_Tout(self):
+    def calc_hout(self):
         td_ideal = self.Tin * self.p_ratio ** (1 - 1 / self.k)
         td_params_reduced = np.dot(self.params_temp_compression, self.speed_array)
         td_multiplier = calc_thirdorder_polynomial(self.pin, self.pout, td_params_reduced)
-        self.Tout = td_ideal/td_multiplier
+        Tout = td_ideal/td_multiplier
+        self.hout = CPPSI('H', 'T', Tout, 'P', self.pout, self.medium)
 
     def set_speed(self, speed):
         """
