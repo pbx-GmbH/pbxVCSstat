@@ -2009,6 +2009,10 @@ class Source(Component):
         else:
             raise ValueError('Cannot set parameter {}'.format(param))
 
+        def set_temperature(self, temp: float):
+            medium = self.junctions['outlet_A'].get_medium()
+            self.set_enthalpy(CPPSI('H', 'T', temp, 'P', self.p, medium))
+
 
 class Sink(Component):
     """
