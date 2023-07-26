@@ -1068,6 +1068,22 @@ class Condenser(Component):
         hin = self.junctions['inlet_A'].get_enthalpy()
         h = np.linspace()
 
+    def define_export_variables(self):
+        """
+        Define which variables are to be exported.
+
+        :return:
+        """
+        self.export_variables = {
+            'T_amb': self.T_air_in,
+            'TAo_desuperheat': self.TAo_desuperheat,
+            'TAo_condensing': self.TAo_condenser,
+            'TAo_subcooling': self.TAo_subcool,
+            'mdot_air': self.mdot_air,
+            'areafractions[sh,cond,sc]': [self.areafraction_desuperheat, self.areafraction_condenser, self.areafraction_subcool],
+            'TC': self.TC
+        }
+        return
 
 class CondenserCounterflow(Component):
     """
@@ -1953,7 +1969,8 @@ class Source(Component):
         self.export_variables = {
             'mdot': self.mdot,
             'p': self.p,
-            'h': self.h
+            'h': self.h,
+            'T': CPPSI('T', 'H', self.h, 'P', self.p, self.junctions['outlet_A'].get_medium())
         }
         return
 
